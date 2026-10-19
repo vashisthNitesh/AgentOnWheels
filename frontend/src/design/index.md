@@ -122,3 +122,44 @@ const meta = getStatusMeta('in_transit')
   - Slow: 250ms (drawers, modal backdrops)
 - **Easings:** `cubic-bezier(0.16, 1, 0.3, 1)` (ease-out) for entrance; `cubic-bezier(0.7, 0, 0.84, 0)` for exit.
 - **Reduced Motion:** If `prefers-reduced-motion: reduce` is enabled, translations, scales, and continuous animations are suppressed; opacity fades remain capped at ≤ 100ms.
+
+---
+
+## 6. Registry Metadata to UI Adapter & DataTable Specification
+
+The application presentation layer is driven by declarative registry metadata from `/api/meta/:key/`. This allows all ~40 modules to share a consistent, high-performance, accessible data table experience.
+
+### 6.1 Field Type to Cell Renderer Mapping
+
+| Registry Field Metadata | Detected Type | Component | Formatting & Behavior |
+|---|---|---|---|
+| `name === 'status'` or `(type === 'choice' && name.includes('status'))` | Status Enum | `StatusCell.vue` | Semantic `StatusPill` with token color tone and icon |
+| `money === true` or `name in ('rate', 'sell_rate', 'buy_rate', 'total', 'amount', 'cost', 'margin')` | Currency | `MoneyCell.vue` | `formatCurrency` with row currency symbol, fixed 2 decimals, tabular numerals, right-aligned |
+| `type === 'date'` or `type === 'datetime'` or `name.endsWith('_at')` or `name.endsWith('_date')` | Date/Time | `DateCell.vue` | Localized date/time in user timezone with relative time tooltip ("3 hours ago") |
+| `name === 'id'` or `name === 'number'` or `name === 'code'` or `name === 'reference'` or `name.endsWith('_ref')` | Identifier | `IdCell.vue` | Monospace font, high contrast, copy-on-hover button |
+| `name.endsWith('_t')` or `name === 'weight_t'` or `name === 'payload_t'` | Weight | `WeightCell.vue` | Tonnes (`t`) with tooltip showing kilograms (`kg`) |
+| `name.endsWith('_km')` or `name === 'distance_km'` or `name === 'actual_km'` or `name === 'odometer_km'` | Distance | `DistanceCell.vue` | Kilometers (`km`) formatted with thousand separators |
+| `name in ('driver', 'customer', 'vendor', 'vehicle')` or `f.resource in ('drivers', 'customers', ...)` | Entity Relational | `EntityCell.vue` | User avatar / initials pill alongside primary name and subtitle |
+| `type === 'bool'` | Boolean | `BooleanCell.vue` | Subtle emerald check badge or dash (`—`) |
+| `type === 'm2m'` or `Array.isArray(row[name + '_label'])` | Tags / Multiple | `TagsCell.vue` | Secondary badge pills with `+N` count overflow pill |
+| Other string, foreign key, or text | Default | Text Cell | Text truncation with browser tooltip for long strings, muted dash for `null` |
+
+### 6.2 Filter Type to Filter Control Mapping
+
+| Registry Filter Definition | Control Component | Value Handling |
+|---|---|---|
+| `type === 'fk'` (`resource` specified) | `Combobox.vue` | Async resource options with search, cached via `window.__refCache` |
+| `type === 'choice'` (`choices` array) | `Select.vue` / `MultiSelect.vue` | Predefined choice values with human-readable labels |
+| `meta.dates` entry (`name`, `label`) | `DateRangePicker.vue` | Dual range picker with presets ("Last 7 days", "This month", etc.) serializing to `[field]__gte` and `[field]__lte` |
+| `type === 'bool'` | `Select.vue` / `Switch.vue` | Tri-state: Any / Yes / No serializing to boolean or empty |
+| `meta.status` (Status tab) | Status Tabs Bar | Quick navigation with record count badges serializing to URL query parameter |
+
+### 6.3 DataTable Architecture & State Composables
+
+- `useTable.js`: Manages pagination, page size (20/50/100), sorting (`ordering`), search, row selection, density, and request sequencing with `AbortController`.
+- `useFilters.js`: Transforms filter values into API parameters and active filter chips with individual and bulk clear handlers.
+- `useUrlState.js`: Synchronizes table state with `route.query` via `router.replace` without adding unwanted history entries.
+- `useSavedViews.js`: Persists user custom views (filters, sorting, column visibility, density) in `localStorage` with modified-dot detection.
+- `useCsvExport.js`: Automatically utilizes the backend `/api/:key/export/` endpoint with a client-side chunked fallback.
+- `ResourceQuickView.vue`: Slide-over drawer on row click displaying key fields, status pill, relations, timeline summary, and action links.
+

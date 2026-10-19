@@ -417,6 +417,55 @@
         </template>
       </Modal>
 
+      <!-- 10. DataTable & Registry Cells Showcase -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold flex items-center gap-2">
+            <span>📊 Phase 4: TanStack DataTable & Cell Formatters</span>
+          </h2>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-secondary">Density:</span>
+            <div class="inline-flex rounded-lg border border-border-default bg-surface p-0.5 text-xs">
+              <button
+                v-for="d in ['compact', 'normal', 'relaxed']"
+                :key="d"
+                :class="[
+                  'px-2.5 py-1 rounded-md capitalize transition-colors',
+                  tableDensity === d ? 'bg-primary-600 text-white font-medium' : 'text-secondary hover:text-primary'
+                ]"
+                @click="tableDensity = d"
+              >
+                {{ d }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <DataTable
+          :rows="mockOrders"
+          :columns="mockOrderColumns"
+          :fields="mockOrderFields"
+          resource-key="orders"
+          resource-title="Orders"
+          :density="tableDensity"
+          :ordering="tableOrdering"
+          :selected-row-ids="tableSelectedIds"
+          :is-page-selected="tableSelectedIds.length === mockOrders.length"
+          :is-page-partially-selected="tableSelectedIds.length > 0 && tableSelectedIds.length < mockOrders.length"
+          @sort="tableOrdering = tableOrdering === $event ? '-' + $event : $event"
+          @toggle-select="toggleTableSelect"
+          @select-all="toggleTableSelectAll"
+          @row-click="openQuickView"
+        />
+
+        <DataTableBulkBar
+          :selected-count="tableSelectedIds.length"
+          :total-count="mockOrders.length"
+          @clear="tableSelectedIds = []"
+          @export-selected="toast.success(`Exporting ${tableSelectedIds.length} orders`)"
+        />
+      </section>
+
       <!-- Drawer Preview -->
       <Drawer v-model:open="showDrawer" title="Quick View: ORD-2026-9041" description="Live trip status, cargo summary, and timeline" width="md">
         <div class="space-y-6 text-sm">
@@ -492,6 +541,8 @@ import CopyButton from '../components/ui/CopyButton.vue'
 import Skeleton from '../components/feedback/Skeleton.vue'
 import EmptyState from '../components/feedback/EmptyState.vue'
 import ToastContainer from '../components/feedback/ToastContainer.vue'
+import DataTable from '../components/data-table/DataTable.vue'
+import DataTableBulkBar from '../components/data-table/DataTableBulkBar.vue'
 
 const { theme, setTheme } = useTheme()
 const toast = useToast()
@@ -583,4 +634,100 @@ function testToasts() {
     toast.warning('Vehicle DXB-55912 requires oil service in 500 km.')
   }, 300)
 }
+
+// DataTable Showcase State & Data
+const tableDensity = ref('normal')
+const tableOrdering = ref('loading_at')
+const tableSelectedIds = ref([1, 2])
+
+function toggleTableSelect(id) {
+  if (tableSelectedIds.value.includes(id)) {
+    tableSelectedIds.value = tableSelectedIds.value.filter((i) => i !== id)
+  } else {
+    tableSelectedIds.value = [...tableSelectedIds.value, id]
+  }
+}
+
+function toggleTableSelectAll(checked) {
+  tableSelectedIds.value = checked ? mockOrders.map((o) => o.id) : []
+}
+
+function openQuickView(row) {
+  showDrawer.value = true
+}
+
+const mockOrderColumns = [
+  { name: 'number', label: 'Order #' },
+  { name: 'customer', label: 'Customer' },
+  { name: 'lane', label: 'Lane' },
+  { name: 'loading_at', label: 'Loading At' },
+  { name: 'status', label: 'Status' },
+  { name: 'sell_rate', label: 'Sell Rate', align: 'right' },
+  { name: 'weight_t', label: 'Weight', align: 'right' },
+]
+
+const mockOrderFields = {
+  number: { type: 'str', label: 'Order #' },
+  customer: { type: 'fk', label: 'Customer', resource: 'customers' },
+  lane: { type: 'str', label: 'Lane' },
+  loading_at: { type: 'datetime', label: 'Loading At' },
+  status: { type: 'choice', label: 'Status' },
+  sell_rate: { type: 'decimal', money: true, label: 'Sell Rate' },
+  weight_t: { type: 'float', label: 'Weight' },
+}
+
+const mockOrders = [
+  {
+    id: 1,
+    number: 'ORD-2026-9041',
+    customer: 1,
+    customer_label: 'Emirates Steel LLC',
+    lane: 'DXB → AUH',
+    loading_at: '2026-10-20T08:30:00Z',
+    status: 'in_transit',
+    status_label: 'In transit',
+    sell_rate: '2450.00',
+    currency: 'AED',
+    weight_t: 26.4,
+  },
+  {
+    id: 2,
+    number: 'ORD-2026-9042',
+    customer: 2,
+    customer_label: 'DP World Logistics',
+    lane: 'JAFZA → DWC',
+    loading_at: '2026-10-20T10:00:00Z',
+    status: 'confirmed',
+    status_label: 'Confirmed',
+    sell_rate: '1850.00',
+    currency: 'AED',
+    weight_t: 18.0,
+  },
+  {
+    id: 3,
+    number: 'ORD-2026-9043',
+    customer: 3,
+    customer_label: 'Al Ghurair Foods',
+    lane: 'SHJ → RAK',
+    loading_at: '2026-10-19T14:15:00Z',
+    status: 'delivered',
+    status_label: 'Delivered',
+    sell_rate: '3100.00',
+    currency: 'AED',
+    weight_t: 31.2,
+  },
+  {
+    id: 4,
+    number: 'ORD-2026-9044',
+    customer: 4,
+    customer_label: 'Gulf Petrochem',
+    lane: 'FUJ → DXB',
+    loading_at: '2026-10-21T06:00:00Z',
+    status: 'pending',
+    status_label: 'Pending',
+    sell_rate: '2200.00',
+    currency: 'AED',
+    weight_t: 22.5,
+  },
+]
 </script>
