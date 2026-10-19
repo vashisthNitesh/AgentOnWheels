@@ -199,4 +199,9 @@ function handleKeyUp(e) {
     capsLockActive.value = e.getModifierState('CapsLock')
   }
 }
+
+defineExpose({
+  focus: () => inputRef.value?.focus(),
+  inputRef,
+})
 </script>
