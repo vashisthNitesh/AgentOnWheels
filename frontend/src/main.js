@@ -15,6 +15,7 @@ const routes = [
   { path: '/r/:key/:id(\\d+)', component: () => import('./views/ResourceDetail.vue') },
   { path: '/r/:key/:id(\\d+)/edit', component: () => import('./views/ResourceForm.vue') },
   { path: '/configuration', component: () => import('./views/ConfigHub.vue') },
+  { path: '/ui-kit', component: () => import('./views/UiKit.vue'), meta: { public: true } },
   { path: '/:p(.*)*', component: () => import('./views/NotFound.vue') },
 ]
 const router = createRouter({ history: createWebHistory(), routes })

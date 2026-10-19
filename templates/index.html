@@ -1,6 +1,28 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AgentOnWheels TMS</title>  <script type="module" crossorigin src="/static/assets/index-BEp12WVf.js"></script>
-  <link rel="stylesheet" crossorigin href="/static/assets/index-CkCQgjo1.css">
-</head>
-<body class="bg-slate-50"><div id="app"></div></body></html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgentOnWheels TMS</title>
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('aow-theme');
+          var dark = t === 'dark' || ((!t || t === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/static/assets/index-CjOFxWGz.js"></script>
+    <link rel="stylesheet" crossorigin href="/static/assets/index-fyl7vs80.css">
+  </head>
+  <body class="bg-app text-primary antialiased min-h-screen selection:bg-primary-500/20 selection:text-primary-700 dark:selection:text-primary-300">
+    <div id="app"></div>
+  </body>
+</html>
