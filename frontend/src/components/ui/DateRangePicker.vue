@@ -1,5 +1,5 @@
 <template>
-  <div ref="containerRef" class="relative w-full">
+  <div ref="containerRef" :class="cn('relative w-full', isOpen && 'z-50')">
     <!-- Trigger Input Box -->
     <div
       tabindex="0"
@@ -16,7 +16,7 @@
       <div class="flex items-center gap-2 truncate flex-1">
         <CalendarIcon class="w-4 h-4 text-secondary shrink-0" />
         <span v-if="displayRange" class="truncate font-medium text-xs">{{ displayRange }}</span>
-        <span v-else class="text-muted text-xs truncate">{{ placeholder || 'Select date range…' }}</span>
+        <span v-else class="text-muted font-normal text-xs truncate">{{ placeholder || 'Select date range…' }}</span>
       </div>
 
       <div class="flex items-center gap-1 ml-2 shrink-0">
@@ -36,7 +36,10 @@
     <!-- Dropdown Modal with Presets Rail and Dual Calendars -->
     <div
       v-if="isOpen"
-      class="absolute left-0 top-full mt-1 z-dropdown rounded-xl border border-border-default bg-surface-raised text-primary shadow-xl p-4 select-none animate-in fade-in zoom-in-95 duration-150 flex flex-col md:flex-row gap-4"
+      :class="cn(
+        'absolute left-0 z-dropdown rounded-xl border border-border-default bg-surface-raised bg-white dark:bg-slate-900 text-primary shadow-xl shadow-slate-950/15 dark:shadow-black/60 p-4 select-none animate-in fade-in zoom-in-95 duration-150 flex flex-col md:flex-row gap-4',
+        openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
+      )"
     >
       <!-- Left Rail: Presets -->
       <div class="flex md:flex-col gap-1 border-b md:border-b-0 md:border-r border-border-default pb-3 md:pb-0 md:pr-4 overflow-x-auto shrink-0 min-w-[130px]">
@@ -314,9 +317,19 @@ function nextMonth() {
   viewMonth.value = addMonths(viewMonth.value, 1)
 }
 
+const openUpward = ref(false)
+
+function checkPosition() {
+  if (!containerRef.value || typeof window === 'undefined') return
+  const rect = containerRef.value.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  openUpward.value = spaceBelow < 380 && rect.top > 380
+}
+
 function toggleOpen() {
   if (isOpen.value) close()
   else {
+    checkPosition()
     tempStart.value = props.startValue || ''
     tempEnd.value = props.endValue || ''
     isOpen.value = true

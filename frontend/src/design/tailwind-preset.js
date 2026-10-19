@@ -16,19 +16,44 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      textColor: {
+        'primary': withOpacity('--text-primary'),
+        'secondary': withOpacity('--text-secondary'),
+        'muted': withOpacity('--text-muted'),
+        'on-primary': withOpacity('--text-on-primary'),
+      },
+      placeholderColor: {
+        'muted': withOpacity('--text-muted'),
+        'secondary': withOpacity('--text-secondary'),
+        'primary': withOpacity('--text-primary'),
+      },
+      backgroundColor: {
+        'app': withOpacity('--bg-app'),
+        'surface': withOpacity('--bg-surface'),
+        'surface-raised': withOpacity('--bg-surface-raised'),
+        'subtle': withOpacity('--bg-subtle'),
+        'muted': withOpacity('--bg-muted'),
+      },
+      borderColor: {
+        'default': withOpacity('--border-default'),
+        'strong': withOpacity('--border-strong'),
+        'border-default': withOpacity('--border-default'),
+        'border-strong': withOpacity('--border-strong'),
+      },
       colors: {
         // Semantic Surfaces & Aliases
         'app': withOpacity('--bg-app'),
         'surface': withOpacity('--bg-surface'),
         'surface-raised': withOpacity('--bg-surface-raised'),
         'subtle': withOpacity('--bg-subtle'),
-        'muted': withOpacity('--bg-muted'),
+        'muted': withOpacity('--text-muted'), // Ensures fallback for utilities is text-muted
+        'bg-muted': withOpacity('--bg-muted'),
 
         // Semantic Borders
         'border-default': withOpacity('--border-default'),
         'border-strong': withOpacity('--border-strong'),
 
-        // Semantic Text
+        // Semantic Text Aliases
         'text-primary': withOpacity('--text-primary'),
         'text-secondary': withOpacity('--text-secondary'),
         'text-muted': withOpacity('--text-muted'),
@@ -93,6 +118,22 @@ export default {
           600: withOpacity('--color-info-600'),
           700: withOpacity('--color-info-700'),
         },
+      },
+      zIndex: {
+        '0': '0',
+        '10': '10',
+        '20': '20',
+        '30': '30',
+        '40': '40',
+        '50': '50',
+        'dropdown': '1000',
+        'sticky': '1020',
+        'fixed': '1030',
+        'drawer': '1040',
+        'modal': '1050',
+        'popover': '1060',
+        'tooltip': '1070',
+        'toast': '1080',
       },
       fontFamily: {
         sans: ['Inter Variable', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],

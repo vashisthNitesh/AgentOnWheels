@@ -14,7 +14,7 @@
     </div>
 
     <!-- Input Control Slot -->
-    <div class="relative w-full">
+    <div class="w-full">
       <slot
         :id="fieldId"
         :aria-describedby="describedBy"

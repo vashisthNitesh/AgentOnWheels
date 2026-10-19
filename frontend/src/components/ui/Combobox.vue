@@ -1,5 +1,5 @@
 <template>
-  <div ref="containerRef" class="relative w-full">
+  <div ref="containerRef" :class="cn('relative w-full', isOpen && 'z-50')">
     <!-- Trigger Button -->
     <button
       type="button"
@@ -24,7 +24,7 @@
     >
       <span class="truncate block flex-1">
         <span v-if="selectedDisplay" class="font-medium text-primary">{{ selectedDisplay }}</span>
-        <span v-else class="text-muted">{{ placeholder }}</span>
+        <span v-else class="text-muted font-normal">{{ placeholder }}</span>
       </span>
 
       <div class="flex items-center gap-1 ml-2 shrink-0">
@@ -46,7 +46,10 @@
     <div
       v-if="isOpen"
       ref="popoverRef"
-      class="absolute left-0 top-full mt-1 z-dropdown w-full min-w-[240px] max-h-[340px] rounded-lg border border-border-default bg-surface-raised text-primary shadow-lg overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
+      :class="cn(
+        'absolute left-0 z-dropdown w-full min-w-[240px] max-h-[340px] rounded-lg border border-border-default bg-surface-raised bg-white dark:bg-slate-900 text-primary shadow-xl shadow-slate-950/15 dark:shadow-black/60 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150',
+        openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
+      )"
       @keydown.esc="close"
     >
       <!-- Search Input -->
@@ -236,6 +239,14 @@ const fetchedOptions = ref([])
 const highlightedIndex = ref(0)
 const abortController = ref(null)
 const recentKeys = ref([])
+const openUpward = ref(false)
+
+function checkPosition() {
+  if (!containerRef.value || typeof window === 'undefined') return
+  const rect = containerRef.value.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  openUpward.value = spaceBelow < 340 && rect.top > 340
+}
 
 onClickOutside(containerRef, () => {
   if (isOpen.value) close()
@@ -363,6 +374,7 @@ function toggleOpen() {
 }
 
 function openAndFocus() {
+  checkPosition()
   isOpen.value = true
   highlightedIndex.value = 0
   if ((props.resource || props.loadOptions) && fetchedOptions.value.length === 0) {

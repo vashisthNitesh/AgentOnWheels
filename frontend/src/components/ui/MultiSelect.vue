@@ -1,5 +1,5 @@
 <template>
-  <div ref="containerRef" class="relative w-full">
+  <div ref="containerRef" :class="cn('relative w-full', isOpen && 'z-50')">
     <!-- Trigger Box -->
     <div
       :id="triggerId"
@@ -20,7 +20,7 @@
       @keydown.esc="close"
     >
       <!-- Empty Placeholder -->
-      <span v-if="!selectedList.length" class="text-muted text-xs px-1.5 select-none">
+      <span v-if="!selectedList.length" class="text-muted font-normal text-xs px-1.5 select-none">
         {{ placeholder }}
       </span>
 
@@ -72,7 +72,10 @@
     <div
       v-if="isOpen"
       ref="popoverRef"
-      class="absolute left-0 top-full mt-1 z-dropdown w-full min-w-[260px] max-h-[340px] rounded-lg border border-border-default bg-surface-raised text-primary shadow-lg overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
+      :class="cn(
+        'absolute left-0 z-dropdown w-full min-w-[260px] max-h-[340px] rounded-lg border border-border-default bg-surface-raised bg-white dark:bg-slate-900 text-primary shadow-xl shadow-slate-950/15 dark:shadow-black/60 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150',
+        openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
+      )"
       @keydown.esc="close"
     >
       <!-- Search Input -->
@@ -212,6 +215,14 @@ const searchQuery = ref('')
 const loading = ref(false)
 const fetchError = ref('')
 const fetchedOptions = ref([])
+const openUpward = ref(false)
+
+function checkPosition() {
+  if (!containerRef.value || typeof window === 'undefined') return
+  const rect = containerRef.value.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  openUpward.value = spaceBelow < 340 && rect.top > 340
+}
 
 onClickOutside(containerRef, () => {
   if (isOpen.value) close()
@@ -333,6 +344,7 @@ function toggleOpen() {
 }
 
 function openAndFocus() {
+  checkPosition()
   isOpen.value = true
   if (props.resource && fetchedOptions.value.length === 0) {
     fetchOptions()

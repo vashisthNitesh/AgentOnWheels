@@ -1,5 +1,5 @@
 <template>
-  <div ref="containerRef" class="relative w-full">
+  <div ref="containerRef" :class="cn('relative w-full', isOpen && 'z-50')">
     <!-- Trigger Input Box -->
     <div
       :id="triggerId"
@@ -21,7 +21,7 @@
       <div class="flex items-center gap-2 truncate flex-1">
         <CalendarIcon class="w-4 h-4 text-secondary shrink-0" />
         <span v-if="displayValue" class="truncate font-medium">{{ displayValue }}</span>
-        <span v-else class="text-muted truncate">{{ placeholder || (withTime ? 'Select date & time…' : 'Select date…') }}</span>
+        <span v-else class="text-muted font-normal truncate">{{ placeholder || (withTime ? 'Select date & time…' : 'Select date…') }}</span>
       </div>
 
       <div class="flex items-center gap-1 ml-2 shrink-0">
@@ -41,7 +41,10 @@
     <!-- Calendar Popover -->
     <div
       v-if="isOpen"
-      class="absolute left-0 top-full mt-1 z-dropdown rounded-lg border border-border-default bg-surface-raised text-primary shadow-lg p-3.5 select-none animate-in fade-in zoom-in-95 duration-150"
+      :class="cn(
+        'absolute left-0 z-dropdown rounded-lg border border-border-default bg-surface-raised bg-white dark:bg-slate-900 text-primary shadow-xl shadow-slate-950/15 dark:shadow-black/60 p-3.5 select-none animate-in fade-in zoom-in-95 duration-150',
+        openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
+      )"
     >
       <!-- Month & Year Navigation -->
       <div class="flex items-center justify-between mb-3 pb-2 border-b border-border-default">
@@ -242,9 +245,19 @@ const calendarDays = computed(() => {
   return days
 })
 
+const openUpward = ref(false)
+
+function checkPosition() {
+  if (!containerRef.value || typeof window === 'undefined') return
+  const rect = containerRef.value.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  openUpward.value = spaceBelow < 340 && rect.top > 340
+}
+
 function toggleOpen() {
   if (isOpen.value) close()
   else {
+    checkPosition()
     if (parsedDate.value) {
       viewDate.value = new Date(parsedDate.value)
       selectedHour.value = String(parsedDate.value.getHours()).padStart(2, '0')

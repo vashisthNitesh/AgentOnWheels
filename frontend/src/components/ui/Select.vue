@@ -21,7 +21,7 @@
       >
         <span class="truncate block flex-1">
           <span v-if="selectedOption">{{ selectedOption.label }}</span>
-          <span v-else class="text-muted">{{ placeholder }}</span>
+          <span v-else class="text-muted font-normal">{{ placeholder }}</span>
         </span>
 
         <div class="flex items-center gap-1 ml-2 shrink-0">
@@ -45,7 +45,7 @@
         <SelectContent
           position="popper"
           :side-offset="4"
-          class="z-dropdown min-w-[180px] max-h-[320px] overflow-hidden rounded-lg border border-border-default bg-surface-raised text-primary shadow-lg animate-in fade-in-80 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
+          class="z-dropdown min-w-[180px] max-h-[320px] overflow-hidden rounded-lg border border-border-default bg-surface-raised bg-white dark:bg-slate-900 text-primary shadow-xl shadow-slate-950/15 dark:shadow-black/60 animate-in fade-in-80 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
         >
           <SelectScrollUpButton class="flex items-center justify-center py-1 text-secondary cursor-default">
             <ChevronUp class="w-4 h-4" />
