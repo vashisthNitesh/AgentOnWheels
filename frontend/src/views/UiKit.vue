@@ -1,15 +1,18 @@
 <template>
-  <div class="min-h-screen bg-app text-primary p-6 lg:p-10 transition-colors duration-200">
-    <div class="max-w-7xl mx-auto space-y-12">
+  <div class="min-h-screen bg-app text-primary p-6 lg:p-12 transition-colors duration-200">
+    <ToastContainer />
+    <ConfirmDialog />
+
+    <div class="max-w-7xl mx-auto space-y-14">
       <!-- Header -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-default pb-6">
         <div>
           <div class="flex items-center gap-2">
             <span class="text-xs uppercase tracking-wider font-semibold text-primary-600 dark:text-primary-400">Design System</span>
-            <span class="chip bg-accent-50 text-accent-700 dark:bg-accent-950/50 dark:text-accent-300">Phase 1 Foundations</span>
+            <span class="chip bg-accent-50 text-accent-700 dark:bg-accent-950/50 dark:text-accent-300">Phase 2 Component Library</span>
           </div>
-          <h1 class="text-3xl font-bold tracking-tight mt-1">AgentOnWheels UI Kit & Visual Test Bench</h1>
-          <p class="text-secondary text-sm mt-1">Tokens, typography, status vocabulary, and theme primitives.</p>
+          <h1 class="text-3xl font-bold tracking-tight mt-1">AgentOnWheels UI Primitives & Test Bench</h1>
+          <p class="text-secondary text-sm mt-1">Enterprise-grade accessible components, form controls, feedback overlays, and tokens.</p>
         </div>
 
         <!-- Theme Mode Switcher -->
@@ -18,7 +21,7 @@
             v-for="mode in ['light', 'dark', 'system']"
             :key="mode"
             :class="[
-              'px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5',
+              'px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 focus-ring',
               theme === mode
                 ? 'bg-primary-600 text-white shadow-xs dark:bg-primary-500'
                 : 'text-secondary hover:text-primary hover:bg-subtle'
@@ -31,146 +34,553 @@
         </div>
       </div>
 
-      <!-- Color Palette Showcase -->
+      <!-- 1. Buttons Section -->
       <section class="space-y-4">
         <h2 class="text-lg font-semibold flex items-center gap-2">
-          <span>🎨 Color Tokens (RGB Triplet Scaled)</span>
+          <span>🔘 Buttons (Variants & Sizes)</span>
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- Primary Indigo -->
-          <div class="card p-4 space-y-3">
-            <div class="text-sm font-semibold">Primary (Indigo #4F46E5)</div>
-            <div class="grid grid-cols-5 gap-1.5 text-[10px] text-center font-mono">
-              <div class="h-10 rounded bg-primary-100 flex items-end justify-center p-1 text-slate-800">100</div>
-              <div class="h-10 rounded bg-primary-300 flex items-end justify-center p-1 text-slate-800">300</div>
-              <div class="h-10 rounded bg-primary-500 flex items-end justify-center p-1 text-white">500</div>
-              <div class="h-10 rounded bg-primary-600 flex items-end justify-center p-1 text-white ring-2 ring-primary-400">600</div>
-              <div class="h-10 rounded bg-primary-800 flex items-end justify-center p-1 text-white">800</div>
+        <Card class="p-6 space-y-6">
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-muted uppercase tracking-wider">Variants</span>
+            <div class="flex flex-wrap items-center gap-3">
+              <Button variant="primary">Primary</Button>
+              <Button variant="secondary">Secondary</Button>
+              <Button variant="outline">Outline</Button>
+              <Button variant="ghost">Ghost</Button>
+              <Button variant="danger">Danger</Button>
+              <Button variant="danger-ghost">Danger Ghost</Button>
+              <Button variant="link">Link Style</Button>
             </div>
           </div>
 
-          <!-- Accent Teal -->
-          <div class="card p-4 space-y-3">
-            <div class="text-sm font-semibold">Accent (Teal #14B8A6 - Live)</div>
-            <div class="grid grid-cols-5 gap-1.5 text-[10px] text-center font-mono">
-              <div class="h-10 rounded bg-accent-100 flex items-end justify-center p-1 text-slate-800">100</div>
-              <div class="h-10 rounded bg-accent-300 flex items-end justify-center p-1 text-slate-800">300</div>
-              <div class="h-10 rounded bg-accent-500 flex items-end justify-center p-1 text-white ring-2 ring-accent-400">500</div>
-              <div class="h-10 rounded bg-accent-700 flex items-end justify-center p-1 text-white">700</div>
-              <div class="h-10 rounded bg-accent-900 flex items-end justify-center p-1 text-white">900</div>
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-muted uppercase tracking-wider">States (Loading & Icons)</span>
+            <div class="flex flex-wrap items-center gap-3">
+              <Button variant="primary" :leading-icon="Plus">Create Order</Button>
+              <Button variant="secondary" :trailing-icon="ArrowRight">Continue</Button>
+              <Button variant="primary" loading>Saving Changes…</Button>
+              <Button variant="danger" loading>Deleting…</Button>
+              <Button variant="secondary" disabled>Disabled State</Button>
+              <Button variant="secondary" size="icon" title="Settings"><Settings class="w-4 h-4" /></Button>
             </div>
           </div>
 
-          <!-- Semantic States -->
-          <div class="card p-4 space-y-3">
-            <div class="text-sm font-semibold">Semantic Functional Scales</div>
-            <div class="grid grid-cols-4 gap-1.5 text-[10px] text-center font-mono text-white">
-              <div class="h-10 rounded bg-emerald-500 flex items-end justify-center p-1">Success</div>
-              <div class="h-10 rounded bg-sky-500 flex items-end justify-center p-1">Info</div>
-              <div class="h-10 rounded bg-amber-500 flex items-end justify-center p-1">Warn</div>
-              <div class="h-10 rounded bg-rose-500 flex items-end justify-center p-1">Danger</div>
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-muted uppercase tracking-wider">Control Heights (32px, 36px, 40px)</span>
+            <div class="flex flex-wrap items-center gap-3">
+              <Button size="sm">Small (32px)</Button>
+              <Button size="md">Medium (36px - Default)</Button>
+              <Button size="lg">Large (40px)</Button>
             </div>
           </div>
-
-          <!-- Semantic Aliases -->
-          <div class="card p-4 space-y-2 text-xs">
-            <div class="font-semibold text-sm mb-1">Semantic Aliases</div>
-            <div class="flex items-center justify-between p-1.5 rounded bg-subtle border border-border-default">
-              <span>--bg-subtle</span>
-              <span class="font-mono text-secondary">Table Header / Hover</span>
-            </div>
-            <div class="flex items-center justify-between p-1.5 rounded bg-muted">
-              <span>--bg-muted</span>
-              <span class="font-mono text-secondary">Disabled / Skeletons</span>
-            </div>
-          </div>
-        </div>
+        </Card>
       </section>
 
-      <!-- Typography System -->
+      <!-- 2. Form Controls Section -->
       <section class="space-y-4">
-        <h2 class="text-lg font-semibold">🔤 Typography & Numbers (Inter Variable + JetBrains Mono)</h2>
-        <div class="card p-6 divide-y divide-border-default space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-4 items-center gap-4 pt-3 first:pt-0">
-            <span class="text-xs font-mono text-secondary">text-3xl (30px / 36px)</span>
-            <div class="md:col-span-3 text-3xl font-semibold tracking-tight">AED 1,489,230.50 <span class="text-sm font-normal text-muted tabular-nums">· tabular-nums</span></div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-4 items-center gap-4 pt-4">
-            <span class="text-xs font-mono text-secondary">text-2xl (24px / 32px)</span>
-            <div class="md:col-span-3 text-2xl font-semibold">Orders & Dispatch Cockpit</div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-4 items-center gap-4 pt-4">
-            <span class="text-xs font-mono text-secondary">text-base & Mono IDs</span>
-            <div class="md:col-span-3 flex flex-wrap items-center gap-3 text-base">
-              <span>Standard body text with monospace IDs:</span>
-              <code class="px-2 py-0.5 rounded bg-subtle border border-border-strong font-mono text-sm font-medium">ORD-2026-9041</code>
-              <code class="px-2 py-0.5 rounded bg-subtle border border-border-strong font-mono text-sm font-medium">DXB-77291-C</code>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-4 items-center gap-4 pt-4">
-            <span class="text-xs font-mono text-secondary">Tabular Alignment</span>
-            <div class="md:col-span-3 grid grid-cols-3 max-w-sm font-mono text-sm tabular-nums">
-              <span>11,111.11 kg</span>
-              <span>88,888.88 kg</span>
-              <span>99,999.99 kg</span>
-            </div>
-          </div>
-        </div>
-      </section>
+        <h2 class="text-lg font-semibold flex items-center gap-2">
+          <span>📝 Form Controls & Accessible FormField</span>
+        </h2>
+        <Card class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Text Input with Units -->
+            <FormField label="Cargo Weight" hint="Maximum payload capacity" required>
+              <Input v-model="form.weight" type="number" suffix="tonnes" placeholder="0.00" clearable />
+            </FormField>
 
-      <!-- Status Vocabulary Showcase -->
-      <section class="space-y-4">
-        <h2 class="text-lg font-semibold">🏷️ Status Vocabulary (All 38 Registered Statuses)</h2>
-        <div class="card p-6">
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            <div
-              v-for="(meta, key) in STATUS_MAP"
-              :key="key"
-              :class="[
-                'flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-transform hover:scale-[1.02]',
-                TONE_STYLES[meta.tone]?.bg,
-                TONE_STYLES[meta.tone]?.text,
-                TONE_STYLES[meta.tone]?.border,
-              ]"
-            >
-              <span
-                :class="[
-                  'w-2 h-2 rounded-full shrink-0',
-                  TONE_STYLES[meta.tone]?.dot,
-                  meta.pulse && 'animate-ping opacity-75'
+            <!-- Currency with Prefix -->
+            <FormField label="Target Sell Rate" optional>
+              <Input v-model="form.rate" prefix="AED" placeholder="0.00" clearable />
+            </FormField>
+
+            <!-- Password with Caps Lock -->
+            <FormField label="Driver Passcode" hint="Show/hide & Caps Lock detection" error="Passcode must be at least 6 digits">
+              <Input v-model="form.password" type="password" placeholder="Enter secure passcode" />
+            </FormField>
+
+            <!-- Select Static Options -->
+            <FormField label="Service Type" required>
+              <Select
+                v-model="form.serviceType"
+                :options="[
+                  { value: 'FTL', label: 'Full Truckload (FTL)', description: 'Dedicated fleet vehicle' },
+                  { value: 'LTL', label: 'Less Than Truckload (LTL)', description: 'Shared cargo consolidation' },
+                  { value: 'FCL', label: 'Full Container Load (FCL)', description: 'Standard container line' },
+                ]"
+                placeholder="Choose service type…"
+                clearable
+              />
+            </FormField>
+
+            <!-- Searchable Combobox -->
+            <FormField label="Assign Customer (Combobox)" hint="Searchable with recent memory">
+              <Combobox
+                v-model="form.customerId"
+                :options="mockCustomers"
+                placeholder="Search or pick customer…"
+                value-key="id"
+                label-key="name"
+              />
+            </FormField>
+
+            <!-- MultiSelect with Chips -->
+            <FormField label="Required Documents (MultiSelect)">
+              <MultiSelect
+                v-model="form.docTypes"
+                :options="mockDocs"
+                placeholder="Select required documents…"
+                value-key="id"
+                label-key="name"
+              />
+            </FormField>
+
+            <!-- DatePicker -->
+            <FormField label="Loading Date & Time" required>
+              <DatePicker v-model="form.loadingDate" with-time clearable />
+            </FormField>
+
+            <!-- DateRangePicker -->
+            <FormField label="Reporting Window">
+              <DateRangePicker
+                v-model:start-value="form.startDate"
+                v-model:end-value="form.endDate"
+              />
+            </FormField>
+
+            <!-- Textarea -->
+            <FormField label="Special Handling Instructions" optional>
+              <Textarea v-model="form.notes" placeholder="Driver remarks, gate requirements…" maxlength="300" />
+            </FormField>
+          </div>
+
+          <!-- Checkbox, Switch, RadioGroup -->
+          <div class="mt-8 pt-6 border-t border-border-default grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div class="space-y-3">
+              <span class="text-xs font-mono text-muted uppercase tracking-wider block">Checkbox & Switch</span>
+              <Checkbox v-model="form.isHazardous" label="Hazardous Materials (HAZMAT)" />
+              <Checkbox model-value="indeterminate" label="Indeterminate Leg Allocation" />
+              <Switch v-model="form.autoDispatch" label="Auto-dispatch on confirmation" description="Instantly allocate nearest verified truck" />
+            </div>
+
+            <div class="md:col-span-2 space-y-2">
+              <span class="text-xs font-mono text-muted uppercase tracking-wider block">RadioGroup (Card Style)</span>
+              <RadioGroup
+                v-model="form.billingType"
+                orientation="horizontal"
+                :options="[
+                  { value: 'per_trip', label: 'Per Trip Rate', description: 'Flat agreed rate per lane' },
+                  { value: 'per_tonne', label: 'Per Tonne-Km', description: 'Dynamic weight & distance billing' },
+                  { value: 'lease', label: 'Dedicated Lease', description: 'Monthly fixed contract vehicle' },
                 ]"
               />
-              <span class="truncate">{{ meta.label }}</span>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <!-- 3. Status Vocabulary & Badges -->
+      <section class="space-y-4">
+        <h2 class="text-lg font-semibold flex items-center gap-2">
+          <span>🏷️ Badges & StatusPill System</span>
+        </h2>
+        <Card class="p-6 space-y-6">
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-muted uppercase tracking-wider">Semantic Badges</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <Badge variant="neutral" dot>Neutral</Badge>
+              <Badge variant="primary" dot>Primary</Badge>
+              <Badge variant="accent" dot>Accent</Badge>
+              <Badge variant="success" dot>Success</Badge>
+              <Badge variant="warning" dot>Warning</Badge>
+              <Badge variant="danger" dot>Danger</Badge>
+              <Badge variant="info" dot>Info</Badge>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-muted uppercase tracking-wider">Status Pills (Tone Mapped with Live Pulse)</span>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <StatusPill status="in_transit" show-icon />
+              <StatusPill status="in_progress" show-icon />
+              <StatusPill status="confirmed" show-icon />
+              <StatusPill status="completed" show-icon />
+              <StatusPill status="unassigned" show-icon />
+              <StatusPill status="cancelled" show-icon />
+              <StatusPill status="ready_for_invoice" show-icon />
+              <StatusPill status="paid" show-icon />
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <!-- 4. Data Display, Avatars & KPIs -->
+      <section class="space-y-4">
+        <h2 class="text-lg font-semibold flex items-center gap-2">
+          <span>📊 KPIs, Avatars & Micro-components</span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KpiCard
+            label="Total Orders"
+            value="1,248"
+            :delta="14.2"
+            delta-period="vs last month"
+            subtitle="98% on-time delivery"
+            :sparkline="[20, 24, 30, 28, 35, 42, 48, 52]"
+            clickable
+          />
+          <KpiCard
+            label="Revenue"
+            value="AED 489.2K"
+            :delta="8.6"
+            delta-period="vs last month"
+            subtitle="Cost captured: 94%"
+            :sparkline="[10, 15, 12, 18, 25, 22, 30, 38]"
+            clickable
+          />
+          <KpiCard
+            label="Late Trips"
+            value="14"
+            :delta="-22.5"
+            good-direction="down"
+            delta-period="vs prev"
+            subtitle="Target < 20 trips"
+            :sparkline="[40, 38, 32, 28, 22, 18, 16, 14]"
+            clickable
+          />
+          <KpiCard
+            label="Fleet Utilisation"
+            value="87.4"
+            unit="%"
+            :delta="3.1"
+            is-pts
+            delta-period="vs prev"
+            subtitle="Own trucks on road: 46"
+            :sparkline="[70, 72, 75, 78, 80, 84, 86, 87]"
+            clickable
+          />
+        </div>
+
+        <Card class="p-6 flex flex-wrap items-center justify-between gap-6">
+          <!-- Avatars & Groups -->
+          <div class="flex items-center gap-4">
+            <Avatar name="Rashid Khan" size="40" />
+            <Avatar name="Nitesh Vashisth" size="32" />
+            <AvatarGroup :overflow-count="4" size="32">
+              <Avatar name="John Doe" size="32" />
+              <Avatar name="Ali Al-Mansoor" size="32" />
+              <Avatar name="Carlos Silva" size="32" />
+            </AvatarGroup>
+          </div>
+
+          <!-- Micro-components -->
+          <div class="flex items-center gap-4">
+            <span class="text-xs text-secondary flex items-center gap-1 font-mono">
+              <span>ORD-90241</span>
+              <CopyButton text="ORD-90241" />
+            </span>
+            <Divider orientation="vertical" class="h-6" />
+            <div class="flex items-center gap-1 text-xs">
+              <span class="text-secondary">Shortcut:</span>
+              <Kbd>⌘</Kbd><Kbd>K</Kbd>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <!-- 5. Navigation Primitives (Tabs, Stepper, Breadcrumbs, Pagination) -->
+      <section class="space-y-4">
+        <h2 class="text-lg font-semibold flex items-center gap-2">
+          <span>🧭 Navigation (Tabs, Stepper, Breadcrumbs, Pagination)</span>
+        </h2>
+        <Card class="p-6 space-y-6">
+          <Breadcrumbs
+            :items="[
+              { label: 'Operations', icon: Layers, to: '/dashboard' },
+              { label: 'Orders', to: '/r/orders' },
+              { label: 'ORD-2026-9041' },
+            ]"
+          />
+
+          <Divider />
+
+          <!-- Tabs Variants -->
+          <div class="space-y-3">
+            <span class="text-xs font-mono text-muted uppercase tracking-wider block">Tabs: Underline & Segmented</span>
+            <Tabs v-model="activeTab" variant="underline" :tabs="mockTabs" />
+            <Tabs v-model="activeSegment" variant="segmented" :tabs="[{ value: 'board', label: 'Kanban Board' }, { value: 'list', label: 'List View' }]" />
+          </div>
+
+          <Divider />
+
+          <!-- Stepper -->
+          <div class="space-y-3">
+            <span class="text-xs font-mono text-muted uppercase tracking-wider block">Stepper Wizard</span>
+            <Stepper
+              :current-step="currentWizardStep"
+              :max-visited-step="2"
+              :steps="[
+                { title: 'Order Details' },
+                { title: 'Cargo & Vehicles' },
+                { title: 'Route Scheduling', hasError: true },
+                { title: 'Pricing & Review' },
+              ]"
+              @step-click="currentWizardStep = $event"
+            />
+          </div>
+
+          <Divider />
+
+          <!-- Pagination -->
+          <Pagination
+            :page="page"
+            :page-size="20"
+            :total="1284"
+            @update:page="page = $event"
+          />
+        </Card>
+      </section>
+
+      <!-- 6. Overlays, Dialogs & Feedback -->
+      <section class="space-y-4">
+        <h2 class="text-lg font-semibold flex items-center gap-2">
+          <span>🪟 Overlays, Drawers & Toast Notifications</span>
+        </h2>
+        <Card class="p-6 space-y-6">
+          <div class="flex flex-wrap items-center gap-3">
+            <Button variant="primary" @click="showModal = true">Open Modal</Button>
+            <Button variant="secondary" @click="showDrawer = true">Open Slide-Over Drawer</Button>
+            <Button variant="danger" @click="testConfirm">Test Destructive Confirm</Button>
+            <Button variant="ghost" @click="testToasts">Trigger Toasts</Button>
+
+            <DropdownMenu
+              :items="[
+                { header: 'Order Actions' },
+                { label: 'View Details', icon: Eye, action: () => toast.info('Navigating to detail') },
+                { label: 'Edit Leg Allocation', icon: Edit, action: () => toast.info('Opening edit mode') },
+                { separator: true },
+                { label: 'Cancel Order', icon: Trash2, danger: true, action: () => testConfirm() },
+              ]"
+            >
+              <template #trigger>
+                <Button variant="outline" :trailing-icon="ChevronDown">Actions Menu</Button>
+              </template>
+            </DropdownMenu>
+          </div>
+
+          <Divider />
+
+          <!-- Skeletons Demo -->
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-muted uppercase tracking-wider block">Skeletons</span>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Skeleton variant="card" />
+              <div class="card p-4 space-y-3">
+                <Skeleton size="md" width="w-3/4" />
+                <Skeleton size="sm" width="w-full" />
+                <Skeleton size="sm" width="w-1/2" />
+              </div>
+              <div class="card p-4 flex items-center gap-3">
+                <Skeleton variant="avatar" size="40" />
+                <div class="flex-1 space-y-2">
+                  <Skeleton size="sm" width="w-24" />
+                  <Skeleton size="sm" width="w-36" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Divider />
+
+          <!-- Empty State Demo -->
+          <EmptyState
+            variant="no-results"
+            action-text="Reset All Filters"
+            secondary-text="Browse All Orders"
+            @action="toast.success('Filters cleared')"
+          />
+        </Card>
+      </section>
+
+      <!-- Modal Preview -->
+      <Modal v-model:open="showModal" title="Trip Allocation Cockpit" description="Assign vehicle, driver, and trailer to Leg #1">
+        <div class="space-y-4 text-sm">
+          <FormField label="Assigned Driver" required>
+            <Combobox v-model="form.driverId" :options="mockDrivers" placeholder="Select active driver…" />
+          </FormField>
+          <FormField label="Vehicle Plate Number" required>
+            <Combobox v-model="form.vehicleId" :options="mockVehicles" placeholder="Select fleet vehicle…" />
+          </FormField>
+        </div>
+        <template #footer>
+          <Button variant="ghost" @click="showModal = false">Cancel</Button>
+          <Button variant="primary" @click="showModal = false; toast.success('Trip allocated successfully')">Confirm Allocation</Button>
+        </template>
+      </Modal>
+
+      <!-- Drawer Preview -->
+      <Drawer v-model:open="showDrawer" title="Quick View: ORD-2026-9041" description="Live trip status, cargo summary, and timeline" width="md">
+        <div class="space-y-6 text-sm">
+          <div class="flex items-center justify-between pb-3 border-b border-border-default">
+            <div>
+              <div class="font-mono text-xs text-secondary">DXB → AUH</div>
+              <div class="text-base font-bold mt-0.5">Emirates Steel LLC</div>
+            </div>
+            <StatusPill status="in_transit" show-icon />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="card p-3">
+              <span class="text-xs text-muted">Planned Pickup</span>
+              <div class="font-medium text-xs mt-1">20 Oct 2026, 08:30</div>
+            </div>
+            <div class="card p-3">
+              <span class="text-xs text-muted">ETA Destination</span>
+              <div class="font-medium text-xs mt-1 text-emerald-600 dark:text-emerald-400">On Track · 11:45</div>
             </div>
           </div>
         </div>
-      </section>
-
-      <!-- Elevations & Shadows -->
-      <section class="space-y-4">
-        <h2 class="text-lg font-semibold">Layers, Radius & Elevation</h2>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div class="card p-4 shadow-xs text-center text-xs font-medium">shadow-xs<br><span class="text-muted text-[11px]">Subtle cards</span></div>
-          <div class="card p-4 shadow-sm text-center text-xs font-medium">shadow-sm<br><span class="text-muted text-[11px]">Hover cards</span></div>
-          <div class="card p-4 shadow-md text-center text-xs font-medium">shadow-md<br><span class="text-muted text-[11px]">Dropdowns</span></div>
-          <div class="card p-4 shadow-lg text-center text-xs font-medium">shadow-lg<br><span class="text-muted text-[11px]">Popovers</span></div>
-          <div class="card p-4 shadow-xl text-center text-xs font-medium col-span-2 md:col-span-1">shadow-xl<br><span class="text-muted text-[11px]">Modals</span></div>
-        </div>
-      </section>
+        <template #footer>
+          <Button variant="ghost" @click="showDrawer = false">Close</Button>
+          <Button variant="primary" @click="showDrawer = false; toast.info('Navigating to full order page')">Open Full Page ↗</Button>
+        </template>
+      </Drawer>
     </div>
   </div>
 </template>
 
 <script setup>
-import { Sun, Moon, Monitor } from 'lucide-vue-next'
+import { ref, reactive } from 'vue'
+import {
+  Sun, Moon, Monitor, Plus, ArrowRight, Settings, Eye, Edit, Trash2,
+  ChevronDown, Layers
+} from 'lucide-vue-next'
 import { useTheme } from '../composables/useTheme'
-import { STATUS_MAP, TONE_STYLES } from '../design/status'
+import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
+
+// Components
+import Button from '../components/ui/Button.vue'
+import Input from '../components/ui/Input.vue'
+import Textarea from '../components/ui/Textarea.vue'
+import FormField from '../components/ui/FormField.vue'
+import Select from '../components/ui/Select.vue'
+import Combobox from '../components/ui/Combobox.vue'
+import MultiSelect from '../components/ui/MultiSelect.vue'
+import DatePicker from '../components/ui/DatePicker.vue'
+import DateRangePicker from '../components/ui/DateRangePicker.vue'
+import Checkbox from '../components/ui/Checkbox.vue'
+import Switch from '../components/ui/Switch.vue'
+import RadioGroup from '../components/ui/RadioGroup.vue'
+import Badge from '../components/ui/Badge.vue'
+import StatusPill from '../components/ui/StatusPill.vue'
+import Avatar from '../components/ui/Avatar.vue'
+import AvatarGroup from '../components/ui/AvatarGroup.vue'
+import Card from '../components/ui/Card.vue'
+import Tabs from '../components/ui/Tabs.vue'
+import Tooltip from '../components/ui/Tooltip.vue'
+import DropdownMenu from '../components/ui/DropdownMenu.vue'
+import Modal from '../components/ui/Modal.vue'
+import Drawer from '../components/ui/Drawer.vue'
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
+import Stepper from '../components/ui/Stepper.vue'
+import Breadcrumbs from '../components/ui/Breadcrumbs.vue'
+import Pagination from '../components/ui/Pagination.vue'
+import KpiCard from '../components/ui/KpiCard.vue'
+import Kbd from '../components/ui/Kbd.vue'
+import Divider from '../components/ui/Divider.vue'
+import CopyButton from '../components/ui/CopyButton.vue'
+import Skeleton from '../components/feedback/Skeleton.vue'
+import EmptyState from '../components/feedback/EmptyState.vue'
+import ToastContainer from '../components/feedback/ToastContainer.vue'
 
 const { theme, setTheme } = useTheme()
+const toast = useToast()
+const { confirm } = useConfirm()
 
 function modeIcon(mode) {
   if (mode === 'light') return Sun
   if (mode === 'dark') return Moon
   return Monitor
+}
+
+const showModal = ref(false)
+const showDrawer = ref(false)
+const page = ref(1)
+const activeTab = ref('overview')
+const activeSegment = ref('board')
+const currentWizardStep = ref(1)
+
+const form = reactive({
+  weight: 24.5,
+  rate: '1850.00',
+  password: '',
+  serviceType: 'FTL',
+  customerId: 1,
+  docTypes: [1, 2],
+  loadingDate: '2026-10-20T08:30:00Z',
+  startDate: '2026-10-01',
+  endDate: '2026-10-20',
+  notes: 'Fragile industrial coils. Secure with heavy-duty chains.',
+  isHazardous: false,
+  autoDispatch: true,
+  billingType: 'per_trip',
+  driverId: null,
+  vehicleId: null,
+})
+
+const mockCustomers = [
+  { id: 1, name: 'Emirates Steel LLC', code: 'CUST-001' },
+  { id: 2, name: 'DP World Logistics', code: 'CUST-002' },
+  { id: 3, name: 'Al Ghurair Foods', code: 'CUST-003' },
+  { id: 4, name: 'Gulf Petrochem', code: 'CUST-004' },
+]
+
+const mockDrivers = [
+  { id: 1, display: 'Rashid Khan (DRV-102)' },
+  { id: 2, display: 'Muhammad Tariq (DRV-108)' },
+  { id: 3, display: 'Rajesh Kumar (DRV-114)' },
+]
+
+const mockVehicles = [
+  { id: 1, display: 'DXB-55912 (Mercedes Actros)' },
+  { id: 2, display: 'AUH-88231 (Volvo FH16)' },
+  { id: 3, display: 'SHJ-12093 (Scania R500)' },
+]
+
+const mockDocs = [
+  { id: 1, name: 'Commercial Invoice' },
+  { id: 2, name: 'Proof of Delivery (POD)' },
+  { id: 3, name: 'Dangerous Goods Declaration' },
+  { id: 4, name: 'Customs Clearance Exit Bill' },
+]
+
+const mockTabs = [
+  { value: 'overview', label: 'Overview' },
+  { value: 'trips', label: 'Legs & Trips', count: 3 },
+  { value: 'documents', label: 'Documents', count: 4 },
+  { value: 'billing', label: 'Invoices & Billing', count: 1 },
+  { value: 'audit', label: 'Audit Trail' },
+]
+
+async function testConfirm() {
+  const ok = await confirm({
+    title: 'Delete Order Record',
+    message: 'This action will revoke all associated trip legs and vendor orders.',
+    confirmText: 'Delete Order',
+    danger: true,
+    requireMatch: 'ORD-9041',
+  })
+  if (ok) {
+    toast.error('Order ORD-9041 deleted.')
+  } else {
+    toast.info('Deletion cancelled.')
+  }
+}
+
+function testToasts() {
+  toast.success('Order ORD-2026-9041 confirmed successfully.')
+  setTimeout(() => {
+    toast.warning('Vehicle DXB-55912 requires oil service in 500 km.')
+  }, 300)
 }
 </script>
