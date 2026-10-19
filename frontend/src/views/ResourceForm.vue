@@ -1,78 +1,260 @@
 <template>
-  <div v-if="!meta || loadingRec" class="space-y-3"><div class="skeleton h-8 w-60" /><div class="skeleton h-96" /></div>
-  <div v-else class="mx-auto max-w-4xl">
-    <router-link :to="back" class="text-sm text-brand-600">← Back</router-link>
-    <h1 class="mb-4 text-2xl font-bold">{{ id ? 'Edit' : 'New' }} {{ meta.title.replace(/s$/, '').toLowerCase() }}</h1>
-    <div v-if="steps.length > 1" class="mb-4 flex flex-wrap gap-2">
-      <button v-for="(s, i) in steps" :key="i" :class="['flex items-center gap-2 rounded-full px-3 py-1 text-sm', i === step ? 'bg-brand-600 text-white' : stepErrors(i).length ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700']" @click="step = i">
-        <span class="font-bold">{{ i + 1 }}</span>{{ s.title }}<span v-if="stepErrors(i).length">⚠</span></button>
+  <!-- Loading Skeleton -->
+  <div v-if="loading || !meta" class="max-w-5xl mx-auto p-4 sm:p-8 space-y-6">
+    <div class="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+    <div class="h-10 w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+    <div class="h-96 w-full bg-slate-100 dark:bg-slate-900 rounded-xl animate-pulse" />
+  </div>
+
+  <!-- Main Form / Wizard Container -->
+  <div v-else class="max-w-6xl mx-auto p-4 sm:p-8 pb-32 space-y-6">
+    <!-- Top Navigation / Breadcrumbs -->
+    <div class="flex items-center justify-between">
+      <router-link
+        :to="backUrl"
+        class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+      >
+        <ArrowLeft class="w-4 h-4" />
+        <span>Back to {{ meta.title }}</span>
+      </router-link>
+
+      <!-- Autosave indicator -->
+      <div v-if="draftSavedAt" class="flex items-center gap-1.5 text-xs text-slate-400">
+        <CheckCircle2 class="w-3.5 h-3.5 text-emerald-500" />
+        <span>Draft saved · {{ formatTime(draftSavedAt) }}</span>
+      </div>
     </div>
-    <form class="card p-5" @submit.prevent="next">
-      <div v-if="step < steps.length" class="grid gap-4 sm:grid-cols-2">
-        <FieldInput v-for="f in steps[step].fields" :key="f" :f="meta.fields[f]" v-model="data[f]" :error="errors[f]" />
+
+    <!-- Page Title -->
+    <div>
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl">{{ meta.icon || '📝' }}</span>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          {{ recordId ? 'Edit' : 'New' }} {{ singularTitle }}
+        </h1>
+        <span v-if="recordId" class="font-mono text-sm px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
+          #{{ formData.number || formData.code || recordId }}
+        </span>
       </div>
-      <div v-else>
-        <h2 class="mb-3 font-semibold">Review</h2>
-        <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-          <template v-for="f in editable" :key="f"><dt class="text-slate-500">{{ meta.fields[f].label }}</dt><dd>{{ data[f] === undefined || data[f] === null || data[f] === '' ? '—' : String(data[f]) }}</dd></template>
-        </dl>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        {{ recordId ? 'Update fields and save changes' : `Complete the details below to create a new ${singularTitle.toLowerCase()}` }}.
+      </p>
+    </div>
+
+    <!-- Draft Restoration Notice -->
+    <div
+      v-if="hasDraftToRestore"
+      class="p-4 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs"
+    >
+      <div class="flex items-center gap-2">
+        <AlertCircle class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+        <span>
+          A saved draft from <b>{{ formatDateTime(draftTimestamp) }}</b> was found. Would you like to restore it?
+        </span>
       </div>
-      <div v-if="missing.length" class="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">To continue, fill in: <b>{{ missing.map(f => meta.fields[f].label).join(', ') }}</b></div>
-      <p v-if="errors.non_field_errors" class="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{{ errors.non_field_errors }}</p>
-      <div class="mt-6 flex justify-between">
-        <button type="button" class="btn-ghost" @click="step > 0 ? step-- : $router.push(back)">{{ step > 0 ? '‹ Back' : 'Cancel' }}</button>
-        <button class="btn-primary" :disabled="saving">{{ saving ? 'Saving…' : step < steps.length ? 'Next ›' : (id ? 'Save changes' : 'Create') }}</button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          class="px-2.5 py-1 font-semibold rounded bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+          @click="restoreDraft"
+        >
+          Restore draft
+        </button>
+        <button
+          type="button"
+          class="px-2.5 py-1 font-medium rounded hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-800 dark:text-amber-300 transition-colors"
+          @click="discardDraft"
+        >
+          Discard
+        </button>
       </div>
-    </form>
+    </div>
+
+    <!-- Stepper Wizard (if multi-step) -->
+    <div v-if="steps.length > 1" class="py-2 border-y border-slate-200 dark:border-slate-800">
+      <Stepper
+        :steps="formattedSteps"
+        :current-step="currentStep"
+        :max-visited-step="maxVisitedStep"
+        @step-click="goToStep"
+      />
+    </div>
+
+    <!-- Form & Sticky Sidebar Layout -->
+    <div class="flex flex-col xl:flex-row items-start gap-8">
+      <!-- Main Form Body -->
+      <form class="flex-1 w-full space-y-6" @submit.prevent="nextStep">
+        <!-- Error Summary Banner -->
+        <FormErrorSummary
+          :errors="fieldErrors"
+          :fields="meta.fields"
+        />
+
+        <!-- Active Step Card -->
+        <Card class="p-6 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">
+              {{ currentStepObj?.title || 'Details' }}
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Fill in the required fields marked with an asterisk (*).
+            </p>
+          </div>
+
+          <!-- Field Grid (2-column responsive layout) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <template v-for="fieldName in currentStepObj?.fields" :key="fieldName">
+              <FormFieldAdapter
+                :name="fieldName"
+                :field="meta.fields[fieldName]"
+                v-model="formData[fieldName]"
+                :error="fieldErrors[fieldName]"
+                :currency="formData.currency || 'AED'"
+                :class="[
+                  meta.fields[fieldName]?.type === 'text' || fieldName === 'notes' || fieldName === 'remarks'
+                    ? 'md:col-span-2'
+                    : ''
+                ]"
+                @blur="validateField(fieldName)"
+                @fk-select="onFkSelect"
+              />
+            </template>
+          </div>
+        </Card>
+      </form>
+
+      <!-- Sticky Summary Sidebar on Desktop (xl) -->
+      <FormSummarySidebar
+        v-if="steps.length > 1"
+        class="hidden xl:block"
+        :steps="steps"
+        :current-step="currentStep"
+        :form-data="formData"
+        :fields="meta.fields"
+        :errors="fieldErrors"
+        @go-to-step="goToStep"
+      />
+    </div>
+
+    <!-- Sticky Bottom Navigation Footer -->
+    <div class="fixed bottom-0 left-0 right-0 z-30 p-3 sm:px-8 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg">
+      <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+        <!-- Cancel button -->
+        <Button
+          variant="ghost"
+          size="sm"
+          type="button"
+          @click="$router.push(backUrl)"
+        >
+          Cancel
+        </Button>
+
+        <div class="flex items-center gap-2">
+          <!-- Back button in wizard -->
+          <Button
+            v-if="currentStep > 0"
+            variant="outline"
+            size="sm"
+            type="button"
+            @click="prevStep"
+          >
+            <ChevronLeft class="w-4 h-4 mr-1" />
+            Back
+          </Button>
+
+          <!-- Next or Submit button -->
+          <Button
+            variant="primary"
+            size="sm"
+            type="button"
+            :loading="saving"
+            @click="nextStep"
+          >
+            <span>{{ isLastStep ? (recordId ? 'Save changes' : 'Create ' + singularTitle) : 'Next' }}</span>
+            <ChevronRight v-if="!isLastStep" class="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
+
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import api from '../api'
-import FieldInput from '../components/FieldInput.vue'
-const route = useRoute(), router = useRouter()
-const key = route.params.key, id = route.params.id
-const meta = ref(null), data = reactive({}), errors = ref({}), step = ref(0), saving = ref(false), loadingRec = ref(!!id), tried = ref(false)
-const back = computed(() => id ? (key === 'orders' ? `/orders/${id}` : `/r/${key}/${id}`) : `/r/${key}`)
-const editable = computed(() => Object.values(meta.value.fields).filter(f => !f.readonly && f.type !== 'computed').map(f => f.name))
-const steps = computed(() => {
-  if (meta.value.steps) {
-    const s = meta.value.steps.map(x => ({ title: x.title, fields: x.fields.filter(f => editable.value.includes(f)) }))
-    const rest = editable.value.filter(f => !s.some(x => x.fields.includes(f)))
-    if (rest.length) s.push({ title: 'Other', fields: rest })
-    return s
+import { ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-vue-next'
+import { useResourceForm } from '../composables/useResourceForm'
+import { formatDateTime } from '../utils/format'
+
+import Card from '../components/ui/Card.vue'
+import Button from '../components/ui/Button.vue'
+import Stepper from '../components/ui/Stepper.vue'
+import FormFieldAdapter from '../components/form/FormFieldAdapter.vue'
+import FormErrorSummary from '../components/form/FormErrorSummary.vue'
+import FormSummarySidebar from '../components/form/FormSummarySidebar.vue'
+
+const route = useRoute()
+const resourceKey = computed(() => route.params.key)
+const recordId = computed(() => route.params.id)
+
+const meta = ref(null)
+
+const {
+  formData,
+  fieldErrors,
+  currentStep,
+  steps,
+  saving,
+  loading,
+  hasDraftToRestore,
+  draftTimestamp,
+  draftSavedAt,
+  validateField,
+  goToStep,
+  nextStep,
+  prevStep,
+  restoreDraft,
+  discardDraft,
+  onFkSelect,
+} = useResourceForm(resourceKey, recordId, meta)
+
+const maxVisitedStep = ref(0)
+watch(currentStep, (step) => {
+  if (step > maxVisitedStep.value) {
+    maxVisitedStep.value = step
   }
-  return [{ title: 'Details', fields: editable.value }]
 })
-const empty = v => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)
-const missingIn = i => (steps.value[i]?.fields || []).filter(f => meta.value.fields[f].required && empty(data[f]))
-const missing = computed(() => tried.value ? (step.value < steps.value.length ? missingIn(step.value) : steps.value.flatMap((_, i) => missingIn(i))) : [])
-const stepErrors = i => steps.value[i].fields.filter(f => errors.value[f])
-async function next() {
-  tried.value = true
-  if (step.value < steps.value.length) {
-    if (missingIn(step.value).length) return
-    tried.value = false; step.value++; return
+
+const backUrl = computed(() => {
+  if (recordId.value) {
+    return resourceKey.value === 'orders' ? `/orders/${recordId.value}` : `/r/${resourceKey.value}/${recordId.value}`
   }
-  saving.value = true; errors.value = {}
-  const body = Object.fromEntries(editable.value.filter(f => data[f] !== undefined).map(f => [f, data[f] === '' ? null : data[f]]))
-  try {
-    const r = id ? await api.patch(`${key}/${id}/`, body) : await api.post(key + '/', body)
-    router.push(key === 'orders' ? `/orders/${r.data.id}` : `/r/${key}/${r.data.id}`)
-  } catch (e) {
-    const d = e.response?.data || {}
-    errors.value = Object.fromEntries(Object.entries(d).map(([k, v]) => [k, [].concat(v).join(' ')]))
-    if (!e.response) errors.value = { non_field_errors: 'Network error — nothing was saved. Retry.' }
-    const bad = steps.value.findIndex((_, i) => stepErrors(i).length)
-    if (bad >= 0) step.value = bad
-    else if (!errors.value.non_field_errors) errors.value.non_field_errors = Object.values(errors.value).join(' ')
-  } finally { saving.value = false }
+  return `/r/${resourceKey.value}`
+})
+
+const singularTitle = computed(() => {
+  const t = meta.value?.title || 'Record'
+  return t.endsWith('s') ? t.slice(0, -1) : t
+})
+
+const currentStepObj = computed(() => steps.value[currentStep.value])
+const isLastStep = computed(() => currentStep.value >= steps.value.length - 1)
+
+const formattedSteps = computed(() => {
+  return steps.value.map((s) => ({
+    title: s.title,
+    hasError: s.fields.some((f) => !!fieldErrors.value[f]),
+  }))
+})
+
+function formatTime(d) {
+  if (!d) return ''
+  return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
-onMounted(async () => {
-  meta.value = (await api.get('meta/' + key + '/')).data
-  if (id) { const r = (await api.get(`${key}/${id}/`)).data; editable.value.forEach(f => data[f] = r[f]); loadingRec.value = false }
-  else { for (const f of editable.value) if (meta.value.fields[f].type === 'bool') data[f] = false
-    if (data.order_date === undefined && meta.value.fields.order_date) data.order_date = new Date().toISOString().slice(0, 10) }
-})
 </script>
