@@ -1,0 +1,1 @@
+<template><div class="card p-10 text-center"><p class="text-4xl">🧭</p><p class="mt-2 font-semibold">Page not found</p><router-link to="/dashboard" class="btn-primary mt-4">Go to dashboard</router-link></div></template>
