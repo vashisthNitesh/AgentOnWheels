@@ -31,14 +31,14 @@
     <!-- Middle Row: Main Metric Value -->
     <div class="mt-2">
       <Skeleton v-if="loading" size="lg" width="w-28" />
-      <div v-else class="flex items-baseline gap-1 text-2xl lg:text-3xl font-bold tracking-tight text-primary tabular-nums">
+      <div v-else class="flex flex-wrap items-baseline gap-1 text-2xl font-bold tracking-tight text-primary tabular-nums xl:text-[28px]">
         <span>{{ formattedValue }}</span>
         <span v-if="unit" class="text-xs font-medium text-secondary">{{ unit }}</span>
       </div>
     </div>
 
-    <!-- Bottom Row: Delta and Subtitle -->
-    <div class="mt-3 flex items-center justify-between gap-2 text-xs">
+    <!-- Bottom: delta on one line, context on the next (never truncated mid-word) -->
+    <div class="mt-3 flex flex-col gap-1 text-xs">
       <Skeleton v-if="loading" size="sm" width="w-36" />
       <template v-else>
         <!-- Delta Badge -->
@@ -50,13 +50,13 @@
           <TrendingDown v-else-if="delta < 0" class="w-3.5 h-3.5 shrink-0" />
           <Minus v-else class="w-3.5 h-3.5 shrink-0" />
 
-          <span>{{ delta > 0 ? '+' : '' }}{{ delta }}{{ isPts ? ' pts' : '%' }}</span>
-          <span class="font-normal text-muted ml-0.5 text-[11px]">{{ deltaPeriod }}</span>
+          <span class="whitespace-nowrap">{{ delta > 0 ? '+' : '' }}{{ delta }}{{ isPts ? ' pts' : '%' }}</span>
+          <span class="ml-0.5 whitespace-nowrap text-[11px] font-normal text-muted">{{ deltaPeriod }}</span>
         </div>
         <span v-else class="text-muted text-[11px]">No prior data</span>
 
         <!-- Optional Subtitle/Context -->
-        <span v-if="subtitle" class="text-muted text-[11px] truncate max-w-[130px] text-right" :title="subtitle">
+        <span v-if="subtitle" class="line-clamp-2 text-[11px] leading-snug text-muted" :title="subtitle">
           {{ subtitle }}
         </span>
       </template>

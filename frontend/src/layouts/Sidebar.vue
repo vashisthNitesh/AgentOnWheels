@@ -11,7 +11,7 @@
     <aside
       :class="cn(
         'fixed inset-y-0 left-0 z-50 flex flex-col bg-surface border-r border-border-default transition-all duration-200 select-none',
-        'lg:static lg:z-30',
+        'lg:static lg:z-30 shrink-0',
         collapsed ? 'w-16' : 'w-[248px]',
         mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         $attrs.class
@@ -190,7 +190,7 @@ function toggleCollapse() {
 function navItemClass(path) {
   const isActive = route.path === path || (path !== '/dashboard' && route.path.startsWith(path + '/'))
   return cn(
-    'relative flex items-center gap-3 px-2.5 py-2 rounded-md text-xs font-medium transition-all select-none focus-ring',
+    'relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors select-none focus-ring',
     isActive
       ? 'bg-primary-50 text-primary-700 font-semibold dark:bg-primary-950/40 dark:text-primary-300 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r before:bg-primary-600 dark:before:bg-primary-400'
       : 'text-secondary hover:text-primary hover:bg-subtle'

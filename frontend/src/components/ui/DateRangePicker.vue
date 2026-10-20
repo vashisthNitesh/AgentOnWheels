@@ -1,229 +1,200 @@
 <template>
-  <div ref="containerRef" :class="cn('relative w-full', isOpen && 'z-50')">
-    <!-- Trigger Input Box -->
-    <div
-      tabindex="0"
-      :class="cn(
-        'w-full flex items-center justify-between bg-surface text-primary border rounded-md transition text-left focus-ring select-none cursor-pointer',
-        sizeClasses,
-        invalid ? 'border-danger-500 focus:border-danger-500 ring-2 ring-danger-500/20' : 'border-border-strong hover:border-slate-400 dark:hover:border-slate-500 focus:border-primary-500',
-        disabled && 'opacity-60 cursor-not-allowed bg-muted pointer-events-none',
-        $attrs.class
-      )"
-      @click="toggleOpen"
-      @keydown.esc="close"
-    >
-      <div class="flex items-center gap-2 truncate flex-1">
-        <CalendarIcon class="w-4 h-4 text-secondary shrink-0" />
-        <span v-if="displayRange" class="truncate font-medium text-xs">{{ displayRange }}</span>
-        <span v-else class="text-muted font-normal text-xs truncate">{{ placeholder || 'Select date range…' }}</span>
-      </div>
-
-      <div class="flex items-center gap-1 ml-2 shrink-0">
-        <button
-          v-if="clearable && (startValue || endValue) && !disabled"
-          type="button"
+  <PopoverRoot v-model:open="isOpen">
+    <PopoverTrigger as-child>
+      <button
+        type="button"
+        v-bind="restAttrs"
+        :disabled="disabled"
+        aria-haspopup="dialog"
+        :aria-expanded="isOpen"
+        :class="cn(
+          controlBase,
+          'flex items-center gap-2 text-left select-none cursor-pointer',
+          controlSizes[size],
+          invalid ? controlInvalid : (isOpen ? controlOpen : controlIdle),
+          disabled && controlDisabled,
+          $attrs.class
+        )"
+      >
+        <CalendarRange class="h-4 w-4 shrink-0 text-muted" />
+        <span class="min-w-0 flex-1 truncate">
+          <span v-if="displayRange" class="text-primary">{{ displayRange }}</span>
+          <span v-else class="text-muted">{{ placeholder }}</span>
+        </span>
+        <span
+          v-if="clearable && (start || end) && !disabled"
+          role="button"
           tabindex="-1"
-          class="text-secondary hover:text-primary p-0.5 rounded transition"
+          class="shrink-0 rounded p-0.5 text-muted transition hover:bg-subtle hover:text-primary"
           aria-label="Clear range"
-          @click.stop="clearRange"
+          @click.stop.prevent="clearRange"
         >
-          <X class="w-3.5 h-3.5" />
-        </button>
-      </div>
-    </div>
+          <X class="h-3.5 w-3.5" />
+        </span>
+      </button>
+    </PopoverTrigger>
 
-    <!-- Dropdown Modal with Presets Rail and Dual Calendars -->
-    <div
-      v-if="isOpen"
-      :class="cn(
-        'absolute left-0 z-dropdown rounded-xl border border-border-default bg-surface-raised bg-white dark:bg-slate-900 text-primary shadow-xl shadow-slate-950/15 dark:shadow-black/60 p-4 select-none animate-in fade-in zoom-in-95 duration-150 flex flex-col md:flex-row gap-4',
-        openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
-      )"
-    >
-      <!-- Left Rail: Presets -->
-      <div class="flex md:flex-col gap-1 border-b md:border-b-0 md:border-r border-border-default pb-3 md:pb-0 md:pr-4 overflow-x-auto shrink-0 min-w-[130px]">
-        <button
-          v-for="p in presets"
-          :key="p.label"
-          type="button"
-          :class="cn(
-            'px-2.5 py-1.5 rounded-md text-xs font-medium text-left transition-colors whitespace-nowrap focus-ring',
-            activePreset === p.label ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold' : 'hover:bg-subtle text-secondary'
-          )"
-          @click="applyPreset(p)"
-        >
-          {{ p.label }}
-        </button>
-      </div>
-
-      <!-- Calendar View -->
-      <div class="flex flex-col gap-3">
-        <!-- Dual Month Controls -->
-        <div class="flex items-center justify-between pb-2 border-b border-border-default">
+    <PopoverPortal>
+      <PopoverContent
+        align="start"
+        :side-offset="6"
+        :collision-padding="12"
+        :class="cn(floatingPanel, 'z-dropdown flex max-w-[calc(100vw-24px)] flex-col gap-3 p-3 select-none sm:flex-row')"
+      >
+        <!-- Presets -->
+        <div class="flex shrink-0 gap-1 overflow-x-auto border-b border-border-default pb-3 scrollbar-none sm:w-36 sm:flex-col sm:border-b-0 sm:border-r sm:pb-0 sm:pr-3">
           <button
-            type="button"
-            class="p-1 rounded text-secondary hover:text-primary hover:bg-subtle transition focus-ring"
-            @click="prevMonth"
-          >
-            <ChevronLeft class="w-4 h-4" />
-          </button>
-
-          <span class="text-xs font-semibold text-primary">
-            {{ format(viewMonth, 'MMMM yyyy') }}
-          </span>
-
-          <button
-            type="button"
-            class="p-1 rounded text-secondary hover:text-primary hover:bg-subtle transition focus-ring"
-            @click="nextMonth"
-          >
-            <ChevronRight class="w-4 h-4" />
-          </button>
-        </div>
-
-        <!-- Days Grid -->
-        <div class="grid grid-cols-7 gap-1 text-center mb-1">
-          <span v-for="d in ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']" :key="d" class="text-[10px] font-semibold text-muted py-0.5">
-            {{ d }}
-          </span>
-        </div>
-
-        <div class="grid grid-cols-7 gap-1 text-center">
-          <button
-            v-for="(day, idx) in calendarDays"
-            :key="idx"
+            v-for="p in presets"
+            :key="p.label"
             type="button"
             :class="cn(
-              'w-7 h-7 rounded text-xs flex items-center justify-center font-medium transition-colors focus-ring',
-              day.isCurrentMonth ? 'text-primary' : 'text-muted/50',
-              (day.isStart || day.isEnd) && 'bg-primary-600 text-white font-semibold shadow-xs dark:bg-primary-500',
-              day.isInRange && !day.isStart && !day.isEnd && 'bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 rounded-none',
-              day.isToday && !day.isStart && !day.isEnd && 'border border-primary-500 font-semibold'
+              'whitespace-nowrap rounded-md px-2.5 py-1.5 text-left text-xs font-medium transition-colors',
+              activePreset === p.label
+                ? 'bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300'
+                : 'text-secondary hover:bg-subtle hover:text-primary'
             )"
-            @click="selectDate(day.date)"
+            @click="applyPreset(p)"
           >
-            {{ day.date.getDate() }}
+            {{ p.label }}
           </button>
         </div>
 
-        <!-- Footer Actions -->
-        <div class="mt-2 pt-2 border-t border-border-default flex items-center justify-between text-xs">
-          <span class="text-muted text-[11px] font-mono">
-            {{ tempStart ? formatDate(tempStart) : 'Start' }} → {{ tempEnd ? formatDate(tempEnd) : 'End' }}
-          </span>
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="px-2.5 py-1 text-xs text-secondary hover:text-primary"
-              @click="close"
-            >
-              Cancel
+        <!-- Calendar -->
+        <div class="w-[264px]">
+          <div class="mb-2 flex items-center justify-between">
+            <button type="button" class="nav-btn" aria-label="Previous month" @click="viewMonth = subMonths(viewMonth, 1)">
+              <ChevronLeft class="h-4 w-4" />
             </button>
-            <button
-              type="button"
-              class="btn-primary !h-7 !px-3 !text-xs"
-              :disabled="!tempStart || !tempEnd"
-              @click="applyRange"
-            >
-              Apply
+            <span class="text-sm font-semibold text-primary">{{ format(viewMonth, 'MMMM yyyy') }}</span>
+            <button type="button" class="nav-btn" aria-label="Next month" @click="viewMonth = addMonths(viewMonth, 1)">
+              <ChevronRight class="h-4 w-4" />
             </button>
           </div>
+
+          <div class="mb-1 grid grid-cols-7 text-center">
+            <span v-for="d in ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']" :key="d" class="py-1 text-[11px] font-medium text-muted">
+              {{ d }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-7 gap-y-0.5">
+            <div
+              v-for="day in calendarDays"
+              :key="day.key"
+              :class="cn(
+                'flex h-9 items-center justify-center',
+                day.isInRange && 'bg-primary-50 dark:bg-primary-950',
+                day.isStart && day.hasEnd && 'rounded-l-lg bg-primary-50 dark:bg-primary-950',
+                day.isEnd && 'rounded-r-lg bg-primary-50 dark:bg-primary-950'
+              )"
+              @mouseenter="hoverDate = day.date"
+            >
+              <button
+                type="button"
+                :class="cn(
+                  'flex h-9 w-9 items-center justify-center rounded-lg text-sm tabular-nums transition-colors',
+                  day.isCurrentMonth ? 'text-primary' : 'text-muted/50',
+                  (day.isStart || day.isEnd)
+                    ? 'bg-primary-600 font-semibold text-white dark:bg-primary-500'
+                    : 'hover:bg-subtle',
+                  day.isToday && !day.isStart && !day.isEnd && 'font-semibold text-primary-600 dark:text-primary-400'
+                )"
+                @click="selectDate(day.date)"
+              >
+                {{ day.date.getDate() }}
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-3 flex items-center justify-between border-t border-border-default pt-2.5">
+            <span class="text-[11px] text-muted">
+              {{ tempStart ? formatDate(tempStart) : 'Start' }} → {{ tempEnd ? formatDate(tempEnd) : 'End' }}
+            </span>
+            <div class="flex items-center gap-2">
+              <button type="button" class="text-xs text-secondary hover:text-primary" @click="isOpen = false">
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="rounded-md bg-primary-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-40 dark:bg-primary-500"
+                :disabled="!tempStart"
+                @click="applyRange"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
+      </PopoverContent>
+    </PopoverPortal>
+  </PopoverRoot>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
-import { onClickOutside } from '@vueuse/core'
+import { ref, computed, watch, useAttrs } from 'vue'
+import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'reka-ui'
+import { CalendarRange, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
 import {
-  format,
-  subDays,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  subMonths,
-  startOfQuarter,
-  endOfQuarter,
-  addMonths,
-  isSameDay,
-  isSameMonth,
-  isAfter,
-  isBefore,
+  format, subDays, startOfMonth, endOfMonth, startOfYear, subMonths, startOfQuarter, endOfQuarter,
+  addMonths, isSameDay, isSameMonth,
 } from 'date-fns'
 import { cn } from '../../utils/cn'
 import { formatDate } from '../../utils/format'
+import {
+  controlBase, controlSizes, controlIdle, controlOpen, controlInvalid, controlDisabled, floatingPanel,
+} from './controlStyles'
 
+defineOptions({ inheritAttrs: false })
+
+/**
+ * Supports two binding styles:
+ *   v-model:start-value / v-model:end-value   (strings)
+ *   v-model  → { from, to }                     (object, used by the filter drawer)
+ */
 const props = defineProps({
-  startValue: {
-    type: String,
-    default: '',
-  },
-  endValue: {
-    type: String,
-    default: '',
-  },
-  placeholder: {
-    type: String,
-    default: 'Filter by date range…',
-  },
-  size: {
-    type: String,
-    default: 'md',
-  },
-  disabled: {
-    type: Boolean,
-    default: false,
-  },
-  invalid: {
-    type: Boolean,
-    default: false,
-  },
-  clearable: {
-    type: Boolean,
-    default: true,
-  },
+  startValue: { type: String, default: undefined },
+  endValue: { type: String, default: undefined },
+  modelValue: { type: Object, default: undefined },
+  placeholder: { type: String, default: 'Select date range…' },
+  size: { type: String, default: 'md' },
+  disabled: { type: Boolean, default: false },
+  invalid: { type: Boolean, default: false },
+  clearable: { type: Boolean, default: true },
 })
 
-const emit = defineEmits(['update:startValue', 'update:endValue', 'change', 'clear'])
+const emit = defineEmits(['update:startValue', 'update:endValue', 'update:modelValue', 'change', 'clear'])
 
-const containerRef = ref(null)
+const attrs = useAttrs()
+const restAttrs = computed(() => {
+  const { class: _c, ...rest } = attrs
+  return rest
+})
+
+const start = computed(() => props.modelValue?.from ?? props.startValue ?? '')
+const end = computed(() => props.modelValue?.to ?? props.endValue ?? '')
+
 const isOpen = ref(false)
-const viewMonth = ref(new Date())
-
-const tempStart = ref(props.startValue || '')
-const tempEnd = ref(props.endValue || '')
+const viewMonth = ref(startOfMonth(new Date()))
+const tempStart = ref('')
+const tempEnd = ref('')
+const hoverDate = ref(null)
 const activePreset = ref('')
 
-onClickOutside(containerRef, () => {
-  if (isOpen.value) close()
-})
+const parseLocal = (s) => {
+  if (!s) return null
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s)
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(s)
+}
 
-const sizeClasses = computed(() => {
-  return {
-    sm: 'h-8 px-2.5',
-    md: 'h-9 px-3',
-    lg: 'h-10 px-3.5',
-  }[props.size]
-})
+const toIsoDate = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 const displayRange = computed(() => {
-  if (props.startValue && props.endValue) {
-    return `${formatDate(props.startValue)} – ${formatDate(props.endValue)}`
-  }
-  if (props.startValue) return `From ${formatDate(props.startValue)}`
+  if (start.value && end.value) return `${formatDate(start.value)} – ${formatDate(end.value)}`
+  if (start.value) return `From ${formatDate(start.value)}`
+  if (end.value) return `Until ${formatDate(end.value)}`
   return ''
 })
-
-const toIsoDate = (d) => {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const dt = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${dt}`
-}
 
 const presets = [
   { label: 'Today', getRange: () => [new Date(), new Date()] },
@@ -236,6 +207,62 @@ const presets = [
   { label: 'Year to date', getRange: () => [startOfYear(new Date()), new Date()] },
 ]
 
+watch(isOpen, (open) => {
+  if (!open) return
+  tempStart.value = start.value || ''
+  tempEnd.value = end.value || ''
+  viewMonth.value = startOfMonth(parseLocal(start.value) || new Date())
+  activePreset.value = ''
+})
+
+const calendarDays = computed(() => {
+  const mStart = startOfMonth(viewMonth.value)
+  const offset = (mStart.getDay() + 6) % 7
+  const first = new Date(mStart)
+  first.setDate(first.getDate() - offset)
+  const s = parseLocal(tempStart.value)
+  // While picking the end date, preview the range under the cursor.
+  const e = parseLocal(tempEnd.value) || (s && hoverDate.value && hoverDate.value > s ? hoverDate.value : null)
+  const today = new Date()
+  return Array.from({ length: 42 }, (_, i) => {
+    const d = new Date(first)
+    d.setDate(first.getDate() + i)
+    const isStart = s ? isSameDay(d, s) : false
+    const isEnd = e ? isSameDay(d, e) : false
+    return {
+      key: d.toDateString(),
+      date: d,
+      isCurrentMonth: isSameMonth(d, viewMonth.value),
+      isToday: isSameDay(d, today),
+      isStart,
+      isEnd,
+      hasEnd: !!e && !isSameDay(s, e),
+      isInRange: !!(s && e && d > s && d < e),
+    }
+  })
+})
+
+function selectDate(d) {
+  activePreset.value = ''
+  const iso = toIsoDate(d)
+  if (!tempStart.value || tempEnd.value) {
+    tempStart.value = iso
+    tempEnd.value = ''
+  } else if (parseLocal(iso) < parseLocal(tempStart.value)) {
+    tempEnd.value = tempStart.value
+    tempStart.value = iso
+  } else {
+    tempEnd.value = iso
+  }
+}
+
+function emitRange(from, to) {
+  emit('update:startValue', from)
+  emit('update:endValue', to)
+  emit('update:modelValue', from || to ? { from, to } : null)
+  emit('change', { start: from, end: to })
+}
+
 function applyPreset(p) {
   activePreset.value = p.label
   const [s, e] = p.getRange()
@@ -244,99 +271,20 @@ function applyPreset(p) {
   applyRange()
 }
 
-const calendarDays = computed(() => {
-  const mStart = startOfMonth(viewMonth.value)
-  const startDay = (mStart.getDay() + 6) % 7
-  const prevMonthDate = new Date(mStart)
-  prevMonthDate.setDate(prevMonthDate.getDate() - startDay)
-
-  const days = []
-  const sDate = tempStart.value ? new Date(tempStart.value) : null
-  const eDate = tempEnd.value ? new Date(tempEnd.value) : null
-
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(prevMonthDate)
-    d.setDate(prevMonthDate.getDate() + i)
-
-    const isStart = sDate ? isSameDay(d, sDate) : false
-    const isEnd = eDate ? isSameDay(d, eDate) : false
-    const isInRange = sDate && eDate && isAfter(d, sDate) && isBefore(d, eDate)
-
-    days.push({
-      date: d,
-      isCurrentMonth: isSameMonth(d, viewMonth.value),
-      isToday: isSameDay(d, new Date()),
-      isStart,
-      isEnd,
-      isInRange,
-    })
-  }
-
-  return days
-})
-
-function selectDate(d) {
-  activePreset.value = 'Custom'
-  const iso = toIsoDate(d)
-  if (!tempStart.value || (tempStart.value && tempEnd.value)) {
-    tempStart.value = iso
-    tempEnd.value = ''
-  } else if (tempStart.value && !tempEnd.value) {
-    if (new Date(iso) < new Date(tempStart.value)) {
-      tempEnd.value = tempStart.value
-      tempStart.value = iso
-    } else {
-      tempEnd.value = iso
-    }
-  }
-}
-
 function applyRange() {
-  if (tempStart.value && tempEnd.value) {
-    emit('update:startValue', tempStart.value)
-    emit('update:endValue', tempEnd.value)
-    emit('change', { start: tempStart.value, end: tempEnd.value })
-    close()
-  }
+  if (!tempStart.value) return
+  emitRange(tempStart.value, tempEnd.value || tempStart.value)
+  isOpen.value = false
 }
 
 function clearRange() {
-  tempStart.value = ''
-  tempEnd.value = ''
-  activePreset.value = ''
-  emit('update:startValue', '')
-  emit('update:endValue', '')
+  emitRange('', '')
   emit('clear')
 }
-
-function prevMonth() {
-  viewMonth.value = subMonths(viewMonth.value, 1)
-}
-
-function nextMonth() {
-  viewMonth.value = addMonths(viewMonth.value, 1)
-}
-
-const openUpward = ref(false)
-
-function checkPosition() {
-  if (!containerRef.value || typeof window === 'undefined') return
-  const rect = containerRef.value.getBoundingClientRect()
-  const spaceBelow = window.innerHeight - rect.bottom
-  openUpward.value = spaceBelow < 380 && rect.top > 380
-}
-
-function toggleOpen() {
-  if (isOpen.value) close()
-  else {
-    checkPosition()
-    tempStart.value = props.startValue || ''
-    tempEnd.value = props.endValue || ''
-    isOpen.value = true
-  }
-}
-
-function close() {
-  isOpen.value = false
-}
 </script>
+
+<style scoped>
+.nav-btn {
+  @apply inline-flex h-7 w-7 items-center justify-center rounded-md text-secondary transition hover:bg-subtle hover:text-primary;
+}
+</style>

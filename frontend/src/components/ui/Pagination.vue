@@ -1,180 +1,193 @@
 <template>
-  <div
+  <nav
+    aria-label="Pagination"
     :class="cn(
-      'flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border-default bg-surface text-xs text-secondary select-none',
+      'flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2 text-xs text-secondary select-none sm:px-4',
       $attrs.class
     )"
   >
-    <!-- Left: Page Size Selector & Showing Counter -->
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-1.5">
-        <span>Rows per page</span>
-        <select
-          :value="pageSize"
-          class="h-7 rounded border border-border-strong bg-surface px-2 text-xs text-primary focus-ring cursor-pointer"
-          @change="onPageSizeChange"
-        >
-          <option v-for="s in pageSizes" :key="s" :value="s">{{ s }}</option>
-        </select>
-      </div>
+    <!-- Left: rows per page + range -->
+    <div class="flex min-w-0 items-center gap-3">
+      <label class="hidden items-center gap-2 sm:flex">
+        <span class="whitespace-nowrap text-muted">Rows per page</span>
+        <Select
+          :model-value="pageSize"
+          :options="pageSizeOptions"
+          size="sm"
+          class="w-[72px]"
+          aria-label="Rows per page"
+          @update:model-value="onPageSizeChange"
+        />
+      </label>
 
-      <span class="text-muted hidden sm:inline">|</span>
+      <span class="hidden h-4 w-px bg-border-default sm:block" aria-hidden="true" />
 
-      <span class="tabular-nums font-medium text-primary">
-        {{ rangeText }}
+      <span class="whitespace-nowrap tabular-nums" aria-live="polite">
+        <template v-if="total === 0">No records</template>
+        <template v-else>
+          <span class="font-semibold text-primary">{{ start.toLocaleString() }}–{{ end.toLocaleString() }}</span>
+          <span class="text-muted"> of </span>
+          <span class="font-semibold text-primary">{{ total.toLocaleString() }}</span>
+        </template>
       </span>
     </div>
 
-    <!-- Right: Page Navigation -->
+    <!-- Right: navigation -->
     <div class="flex items-center gap-1">
-      <!-- First Page Button -->
       <button
         type="button"
+        class="pg-btn hidden sm:inline-flex"
         :disabled="page <= 1"
-        class="h-7 w-7 rounded border border-border-default bg-surface hover:bg-subtle flex items-center justify-center transition disabled:opacity-40 disabled:pointer-events-none focus-ring"
-        title="First page"
         aria-label="First page"
+        title="First page"
         @click="goTo(1)"
       >
-        <ChevronsLeft class="w-3.5 h-3.5" />
+        <ChevronsLeft class="h-4 w-4" />
       </button>
-
-      <!-- Previous Page Button -->
       <button
         type="button"
+        class="pg-btn"
         :disabled="page <= 1"
-        class="h-7 w-7 rounded border border-border-default bg-surface hover:bg-subtle flex items-center justify-center transition disabled:opacity-40 disabled:pointer-events-none focus-ring"
-        title="Previous page"
         aria-label="Previous page"
+        title="Previous page"
         @click="goTo(page - 1)"
       >
-        <ChevronLeft class="w-3.5 h-3.5" />
+        <ChevronLeft class="h-4 w-4" />
       </button>
 
-      <!-- Page Numbers with Ellipsis -->
-      <template v-for="(p, idx) in visiblePages" :key="idx">
-        <span v-if="p === '...'" class="px-1 text-muted select-none">…</span>
-        <button
-          v-else
-          type="button"
-          :class="cn(
-            'h-7 min-w-[28px] px-1.5 rounded text-xs font-medium tabular-nums transition focus-ring',
-            p === page
-              ? 'bg-primary-600 text-white font-semibold dark:bg-primary-500 shadow-xs'
-              : 'border border-border-default bg-surface text-secondary hover:text-primary hover:bg-subtle'
-          )"
-          @click="goTo(p)"
-        >
-          {{ p }}
-        </button>
-      </template>
+      <!-- Desktop: numbered pages -->
+      <div class="hidden items-center gap-1 md:flex">
+        <template v-for="(p, idx) in visiblePages" :key="`${p}-${idx}`">
+          <span v-if="p === '…'" class="w-7 text-center text-muted">…</span>
+          <button
+            v-else
+            type="button"
+            :aria-current="p === page ? 'page' : undefined"
+            :class="cn(
+              'h-8 min-w-[2rem] rounded-md px-2 text-xs font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50',
+              p === page
+                ? 'bg-primary-600 text-white shadow-xs dark:bg-primary-500'
+                : 'text-secondary hover:bg-subtle hover:text-primary'
+            )"
+            @click="goTo(p)"
+          >
+            {{ p }}
+          </button>
+        </template>
+      </div>
 
-      <!-- Next Page Button -->
+      <!-- Mobile / compact: page x of y -->
+      <span class="px-2 tabular-nums md:hidden">
+        <span class="font-semibold text-primary">{{ page }}</span>
+        <span class="text-muted"> / {{ totalPages }}</span>
+      </span>
+
       <button
         type="button"
+        class="pg-btn"
         :disabled="page >= totalPages"
-        class="h-7 w-7 rounded border border-border-default bg-surface hover:bg-subtle flex items-center justify-center transition disabled:opacity-40 disabled:pointer-events-none focus-ring"
-        title="Next page"
         aria-label="Next page"
+        title="Next page"
         @click="goTo(page + 1)"
       >
-        <ChevronRight class="w-3.5 h-3.5" />
+        <ChevronRight class="h-4 w-4" />
       </button>
-
-      <!-- Last Page Button -->
       <button
         type="button"
+        class="pg-btn hidden sm:inline-flex"
         :disabled="page >= totalPages"
-        class="h-7 w-7 rounded border border-border-default bg-surface hover:bg-subtle flex items-center justify-center transition disabled:opacity-40 disabled:pointer-events-none focus-ring"
-        title="Last page"
         aria-label="Last page"
+        title="Last page"
         @click="goTo(totalPages)"
       >
-        <ChevronsRight class="w-3.5 h-3.5" />
+        <ChevronsRight class="h-4 w-4" />
       </button>
+
+      <!-- Jump to page -->
+      <form
+        v-if="totalPages > 7"
+        class="ml-2 hidden items-center gap-1.5 lg:flex"
+        @submit.prevent="jump"
+      >
+        <span class="text-muted">Go to</span>
+        <input
+          v-model="jumpValue"
+          type="number"
+          min="1"
+          :max="totalPages"
+          inputmode="numeric"
+          :placeholder="String(page)"
+          aria-label="Go to page"
+          class="h-8 w-14 rounded-md border border-border-strong bg-surface px-2 text-center text-xs tabular-nums text-primary outline-none transition [appearance:textfield] focus:border-primary-500 focus:ring-4 focus:ring-primary-500/15 [&::-webkit-inner-spin-button]:appearance-none"
+          @blur="jump"
+        />
+      </form>
     </div>
-  </div>
+  </nav>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 import { cn } from '../../utils/cn'
+import Select from './Select.vue'
+
+defineOptions({ inheritAttrs: false })
 
 const props = defineProps({
-  page: {
-    type: Number,
-    default: 1,
-  },
-  pageSize: {
-    type: Number,
-    default: 20,
-  },
-  total: {
-    type: Number,
-    default: 0,
-  },
-  pageSizes: {
-    type: Array,
-    default: () => [20, 50, 100],
-  },
+  page: { type: Number, default: 1 },
+  pageSize: { type: Number, default: 20 },
+  total: { type: Number, default: 0 },
+  pageSizes: { type: Array, default: () => [10, 20, 50, 100] },
 })
 
 const emit = defineEmits(['update:page', 'update:pageSize', 'change'])
 
-const totalPages = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))
+const jumpValue = ref('')
 
-const rangeText = computed(() => {
-  if (props.total === 0) return '0 records'
-  const start = (props.page - 1) * props.pageSize + 1
-  const end = Math.min(props.page * props.pageSize, props.total)
-  return `Showing ${start.toLocaleString()}–${end.toLocaleString()} of ${props.total.toLocaleString()}`
+const totalPages = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))
+const start = computed(() => (props.total === 0 ? 0 : (props.page - 1) * props.pageSize + 1))
+const end = computed(() => Math.min(props.page * props.pageSize, props.total))
+
+const pageSizeOptions = computed(() => {
+  const sizes = new Set([...props.pageSizes, props.pageSize])
+  return [...sizes].sort((a, b) => a - b).map((s) => ({ value: s, label: String(s) }))
 })
 
 const visiblePages = computed(() => {
-  const current = props.page
   const total = totalPages.value
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1)
-  }
+  const current = Math.min(props.page, total)
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
 
-  const pages = []
-  pages.push(1)
-
-  if (current > 3) {
-    pages.push('...')
-  }
-
-  const start = Math.max(2, current - 1)
-  const end = Math.min(total - 1, current + 1)
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-
-  if (current < total - 2) {
-    pages.push('...')
-  }
-
-  pages.push(total)
-  return pages
+  // Always show 7 slots so the control never changes width while paging.
+  if (current <= 4) return [1, 2, 3, 4, 5, '…', total]
+  if (current >= total - 3) return [1, '…', total - 4, total - 3, total - 2, total - 1, total]
+  return [1, '…', current - 1, current, current + 1, '…', total]
 })
 
 function goTo(p) {
-  if (p < 1 || p > totalPages.value || p === props.page) return
-  emit('update:page', p)
-  emit('change', { page: p, pageSize: props.pageSize })
+  const target = Math.min(Math.max(1, p), totalPages.value)
+  if (target === props.page) return
+  emit('update:page', target)
+  emit('change', { page: target, pageSize: props.pageSize })
 }
 
-function onPageSizeChange(e) {
-  const newSize = Number(e.target.value)
-  emit('update:pageSize', newSize)
-  emit('update:page', 1)
-  emit('change', { page: 1, pageSize: newSize })
+function jump() {
+  const n = parseInt(jumpValue.value, 10)
+  jumpValue.value = ''
+  if (!Number.isNaN(n)) goTo(n)
+}
+
+function onPageSizeChange(val) {
+  const size = Number(val)
+  if (!size || size === props.pageSize) return
+  emit('update:pageSize', size)
+  emit('change', { page: 1, pageSize: size })
 }
 </script>
+
+<style scoped>
+.pg-btn {
+  @apply inline-flex h-8 w-8 items-center justify-center rounded-md text-secondary transition-colors hover:bg-subtle hover:text-primary disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50;
+}
+</style>

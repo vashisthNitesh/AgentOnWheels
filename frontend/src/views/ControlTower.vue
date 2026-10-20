@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto select-none sm:select-auto">
+  <div class="mx-auto w-full max-w-7xl space-y-6">
     <!-- Top Header & Live Auto-Refresh Bar -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
       <div>

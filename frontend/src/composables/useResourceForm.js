@@ -1,4 +1,4 @@
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted, unref } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { z } from 'zod'
 import api, { errText } from '../api'
@@ -20,8 +20,10 @@ export function useResourceForm(resourceKeyRef, recordIdRef, metaRef) {
   const toast = useToast()
   const confirm = useConfirm()
 
-  const key = computed(() => resourceKeyRef.value || resourceKeyRef)
-  const id = computed(() => recordIdRef.value || recordIdRef)
+  // unref() — the old `ref.value || ref` fallback returned the ref object itself
+  // when there was no id, so "New" forms fetched /api/<key>/[object Object]/.
+  const key = computed(() => unref(resourceKeyRef))
+  const id = computed(() => unref(recordIdRef) || null)
 
   // Form State
   const formData = reactive({})

@@ -1,6 +1,6 @@
 <template>
   <!-- Error / 404 State -->
-  <div v-if="error" class="max-w-6xl mx-auto p-6 sm:p-12 text-center">
+  <div v-if="error" class="mx-auto w-full max-w-6xl py-12 text-center">
     <EmptyState
       title="Order Not Found"
       :description="error"
@@ -10,7 +10,7 @@
   </div>
 
   <!-- Loading Skeletons -->
-  <div v-else-if="loading || !order" class="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
+  <div v-else-if="loading || !order" class="mx-auto w-full max-w-7xl space-y-6">
     <div class="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
     <div class="flex justify-between items-center">
       <div class="h-10 w-72 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
@@ -29,7 +29,7 @@
   </div>
 
   <!-- Main Order Detail -->
-  <div v-else class="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
+  <div v-else class="mx-auto w-full max-w-7xl space-y-6">
     <!-- Breadcrumb -->
     <div class="flex items-center justify-between">
       <router-link

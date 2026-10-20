@@ -1,5 +1,7 @@
 <template>
-  <TooltipProvider :delay-duration="delay">
+  <!-- When disabled or empty, render the trigger alone so no blank bubble appears. -->
+  <slot v-if="disabled || (!content && !$slots.content)" />
+  <TooltipProvider v-else :delay-duration="delay">
     <TooltipRoot>
       <TooltipTrigger as-child>
         <slot />
@@ -9,14 +11,14 @@
           :side="side"
           :side-offset="6"
           :class="cn(
-            'z-tooltip rounded-md bg-slate-900 px-2.5 py-1 text-xs text-white shadow-md select-none',
-            'dark:bg-slate-800 dark:border dark:border-border-default',
-            'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
+            'z-tooltip max-w-xs rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-md select-none',
+            'dark:bg-slate-700',
+            'animate-in fade-in-0 zoom-in-95',
             $attrs.class
           )"
         >
           <slot name="content">{{ content }}</slot>
-          <TooltipArrow class="fill-slate-900 dark:fill-slate-800" />
+          <TooltipArrow class="fill-slate-900 dark:fill-slate-700" />
         </TooltipContent>
       </TooltipPortal>
     </TooltipRoot>
@@ -34,6 +36,8 @@ import {
 } from 'reka-ui'
 import { cn } from '../../utils/cn'
 
+defineOptions({ inheritAttrs: false })
+
 defineProps({
   content: {
     type: String,
@@ -47,6 +51,10 @@ defineProps({
     type: String,
     default: 'top',
     validator: v => ['top', 'right', 'bottom', 'left'].includes(v),
+  },
+  disabled: {
+    type: Boolean,
+    default: false,
   },
 })
 </script>

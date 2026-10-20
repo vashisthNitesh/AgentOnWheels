@@ -26,6 +26,6 @@ const breakpoints = useBreakpoints(breakpointsTailwind)
 const isMobile = breakpoints.smaller('md')
 
 const position = computed(() => {
-  return isMobile.value ? 'top-center' : 'bottom-right'
+  return isMobile.value ? 'top-center' : 'top-right'
 })
 </script>

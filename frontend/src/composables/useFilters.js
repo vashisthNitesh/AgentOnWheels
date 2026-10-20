@@ -28,10 +28,12 @@ export function useFilters(metaRef, initialFilters = {}) {
         }
       }
     }
+    // A from/to pair is one date filter, not two.
+    const ranges = new Set()
     for (const [k, v] of Object.entries(dates.value)) {
-      if (v) count++
+      if (v) ranges.add(k.replace(/_(from|to)$/, ''))
     }
-    return count
+    return count + ranges.size
   })
 
   // Convert to API query params

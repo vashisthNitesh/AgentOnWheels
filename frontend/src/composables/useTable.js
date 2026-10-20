@@ -1,4 +1,4 @@
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, unref } from 'vue'
 import api, { errText } from '../api'
 
 /**
@@ -11,8 +11,9 @@ import api, { errText } from '../api'
  */
 export function useTable(resourceKeyRef, metaRef, filterComposable) {
   // Core state
+  const PAGE_SIZE_KEY = 'aow_page_size'
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(readPageSize())
   const ordering = ref('')
   const search = ref('')
   const status = ref('all')
@@ -36,9 +37,18 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
   const columnOrder = ref([])
   const columnWidths = ref({})
 
+  function readPageSize() {
+    try {
+      const v = Number(localStorage.getItem(PAGE_SIZE_KEY))
+      if ([10, 20, 50, 100].includes(v)) return v
+    } catch {}
+    return 20
+  }
+
   // Storage key helpers
-  const key = computed(() => resourceKeyRef.value || resourceKeyRef)
+  const key = computed(() => unref(resourceKeyRef))
   const colsStorageKey = computed(() => `aow_cols_${key.value}`)
+  const orderStorageKey = computed(() => `aow_order_${key.value}`)
   const widthsStorageKey = computed(() => `aow_widths_${key.value}`)
   const densityStorageKey = computed(() => `aow_density_${key.value}`)
 
@@ -47,6 +57,9 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
     try {
       const storedCols = localStorage.getItem(colsStorageKey.value)
       if (storedCols) hiddenColumns.value = JSON.parse(storedCols)
+
+      const storedOrder = localStorage.getItem(orderStorageKey.value)
+      if (storedOrder) columnOrder.value = JSON.parse(storedOrder)
 
       const storedWidths = localStorage.getItem(widthsStorageKey.value)
       if (storedWidths) columnWidths.value = JSON.parse(storedWidths)
@@ -68,11 +81,40 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
   }
 
   function setColumnWidth(colName, width) {
-    columnWidths.value = { ...columnWidths.value, [colName]: Math.max(60, width) }
+    const next = { ...columnWidths.value }
+    if (width === null || width === undefined) delete next[colName]
+    else next[colName] = Math.max(60, Math.round(width))
+    columnWidths.value = next
     try {
       localStorage.setItem(widthsStorageKey.value, JSON.stringify(columnWidths.value))
     } catch {}
   }
+
+  function resetColumnWidths() {
+    columnWidths.value = {}
+    try {
+      localStorage.removeItem(widthsStorageKey.value)
+    } catch {}
+  }
+
+  // Persist column visibility / order whenever they change (from any source).
+  watch(hiddenColumns, (v) => {
+    try {
+      localStorage.setItem(colsStorageKey.value, JSON.stringify(v))
+    } catch {}
+  })
+  watch(columnOrder, (v) => {
+    try {
+      if (v?.length) localStorage.setItem(orderStorageKey.value, JSON.stringify(v))
+      else localStorage.removeItem(orderStorageKey.value)
+    } catch {}
+  })
+  // Rows-per-page is a global preference shared by every list.
+  watch(pageSize, (v) => {
+    try {
+      localStorage.setItem(PAGE_SIZE_KEY, String(v))
+    } catch {}
+  })
 
   function setDensity(d) {
     density.value = d
@@ -209,14 +251,17 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
     }
   })
 
-  // Watch resource key changes
+  // Preferences load immediately; data is loaded by the page once metadata
+  // is available (avoids a duplicate request without status counts).
   watch(
     key,
-    () => {
+    (next, prev) => {
       loadPreferences()
-      page.value = 1
-      clearSelection()
-      loadData()
+      if (prev !== undefined) {
+        page.value = 1
+        clearSelection()
+        loadData()
+      }
     },
     { immediate: true }
   )
@@ -252,6 +297,7 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
     sortBy,
     toggleColumn,
     setColumnWidth,
+    resetColumnWidths,
     setDensity,
     toggleRowSelection,
     toggleSelectPage,

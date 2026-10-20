@@ -1,225 +1,231 @@
 <template>
-  <!-- Loading skeleton before metadata is ready -->
-  <div v-if="!meta" class="space-y-4 p-4 sm:p-6 max-w-7xl mx-auto">
-    <div class="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
-    <div class="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
-    <div class="h-96 w-full bg-slate-100 dark:bg-slate-900 rounded-lg animate-pulse" />
-  </div>
-
-  <!-- Main Resource List View -->
-  <div v-else class="space-y-4 p-3 sm:p-6 max-w-7xl mx-auto select-none sm:select-auto">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">{{ meta.icon || '📦' }}</span>
-          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            {{ meta.title }}
-          </h1>
-          <span v-if="meta.group" class="hidden sm:inline-flex px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-            {{ meta.group }}
-          </span>
+  <!--
+    Full-height list layout: header + one card that fills the remaining
+    viewport. Only the table body scrolls (both axes); the page never does.
+    On small screens the card list falls back to natural page scrolling.
+  -->
+  <div class="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-3 md:h-[calc(100dvh-3.5rem-2rem)] md:min-h-[480px] md:flex-none lg:h-[calc(100dvh-3.5rem-3rem)]">
+    <!-- Header -->
+    <header class="flex shrink-0 flex-wrap items-center justify-between gap-3">
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border-default bg-surface text-primary-600 shadow-xs dark:text-primary-400">
+          <component :is="moduleIcon" class="h-5 w-5" />
         </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          <template v-if="loading && rows.length === 0">Loading records…</template>
-          <template v-else>
-            {{ total.toLocaleString() }} record{{ total === 1 ? '' : 's' }}
-            <span v-if="meta.key === 'trips'"> · counts are per leg</span>
-          </template>
-        </p>
-      </div>
-
-      <!-- Header Action Buttons -->
-      <div class="flex items-center gap-2">
-        <Button
-          v-if="meta.create"
-          variant="primary"
-          size="sm"
-          @click="onCreateNew"
-        >
-          <Plus class="w-4 h-4 mr-1" />
-          <span>New {{ singularTitle }}</span>
-        </Button>
-      </div>
-    </div>
-
-    <!-- Toolbar: Search, Status Tabs, Chips, Views, Export, Density -->
-    <div class="p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-3">
-      <DataTableToolbar
-        :search="search"
-        :status="status"
-        :status-tabs="statusTabs"
-        :counts="counts"
-        :active-filters-count="filterComposable.activeCount.value"
-        :filter-chips="filterComposable.chips.value"
-        :all-columns="allColumns"
-        :hidden-columns="hiddenColumns"
-        :column-order="columnOrder"
-        :density="density"
-        :is-fetching="isFetching"
-        :is-exporting="csvExport.exporting.value"
-        :last-updated="lastUpdated"
-        :saved-views="savedViewsComposable.views.value"
-        :active-view-id="savedViewsComposable.activeViewId.value"
-        :is-view-modified="savedViewsComposable.isModified({ filters: filterComposable.filters.value, ordering, density, search })"
-        @update:search="onSearchChange"
-        @update:status="onStatusChange"
-        @update:hidden-columns="hiddenColumns = $event"
-        @update:column-order="columnOrder = $event"
-        @update:density="setDensity"
-        @open-filters="isFiltersOpen = true"
-        @clear-filters="onClearFilters"
-        @export="onExportCsv"
-        @refresh="loadData"
-        @reset-columns="resetColumns"
-        @apply-view="onApplyView"
-        @save-view="onSaveView"
-        @delete-view="savedViewsComposable.deleteView"
-      />
-    </div>
-
-    <!-- Desktop View: DataTable (hidden on < md) -->
-    <div class="hidden md:block">
-      <DataTable
-        :rows="rows"
-        :columns="adaptedColumns"
-        :fields="meta.fields"
-        :resource-key="resourceKey"
-        :resource-title="meta.title"
-        :meta="meta"
-        :hidden-columns="hiddenColumns"
-        :column-order="columnOrder"
-        :column-widths="columnWidths"
-        :ordering="ordering"
-        :selected-row-ids="selectedRowIds"
-        :is-page-selected="isPageSelected"
-        :is-page-partially-selected="isPagePartiallySelected"
-        :density="density"
-        :loading="loading"
-        :is-fetching="isFetching"
-        :error="error"
-        :page-size="pageSize"
-        :has-filters="hasActiveFilters"
-        @sort="sortBy"
-        @row-click="onRowClick"
-        @row-open-new-tab="onRowOpenNewTab"
-        @toggle-select="toggleRowSelection"
-        @select-all="toggleSelectPage"
-        @clear-filters="onClearFilters"
-        @create="onCreateNew"
-        @retry="loadData"
-        @resize-column="onResizeColumn"
-        @view="openDetail"
-        @edit="openEdit"
-        @duplicate="onDuplicate"
-        @delete="onDeleteRow"
-      />
-    </div>
-
-    <!-- Mobile View: Card List (< md) -->
-    <div class="block md:hidden space-y-2.5">
-      <!-- Loading skeleton -->
-      <template v-if="loading && rows.length === 0">
-        <div v-for="n in 5" :key="n" class="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 animate-pulse space-y-2">
-          <div class="flex justify-between items-center">
-            <div class="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
-            <div class="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" />
-          </div>
-          <div class="h-3 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
-        </div>
-      </template>
-
-      <!-- Actual Cards -->
-      <template v-else-if="rows.length > 0">
-        <div
-          v-for="row in rows"
-          :key="row.id"
-          class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:border-brand-500/50 transition-colors active:bg-slate-50 dark:active:bg-slate-800/80 cursor-pointer"
-          @click="onRowClick(row)"
-        >
-          <!-- Top Row: ID / Number and Status -->
-          <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/60">
-            <div class="flex items-center gap-2">
-              <input
-                type="checkbox"
-                :checked="selectedRowIds.includes(row.id)"
-                class="rounded border-slate-300 text-brand-600 focus:ring-brand-500 h-4 w-4"
-                @click.stop
-                @change="toggleRowSelection(row.id)"
-              />
-              <span class="font-mono text-xs font-bold text-slate-900 dark:text-slate-100">
-                #{{ row.number || row.code || row.id }}
-              </span>
-            </div>
-            <StatusPill
-              v-if="row.status"
-              :status="row.status"
-              :label="row.status_label"
-              size="sm"
-            />
-          </div>
-
-          <!-- Key Fields Summary -->
-          <div class="py-2.5 grid grid-cols-2 gap-2 text-xs">
-            <div v-for="col in mobileKeyColumns" :key="col.name" class="space-y-0.5">
-              <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">
-                {{ col.label }}
-              </span>
-              <div class="truncate text-slate-800 dark:text-slate-200 font-medium">
-                <CellDispatcher
-                  :row="row"
-                  :name="col.name"
-                  :field="meta.fields[col.name]"
-                  :resource-key="resourceKey"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Bottom Footer: Timestamp and Chevron -->
-          <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
-            <span>{{ formatRelative(row.created_at || row.updated_at) }}</span>
-            <span class="inline-flex items-center text-brand-600 dark:text-brand-400 font-medium gap-0.5">
-              <span>View</span>
-              <ChevronRight class="w-3.5 h-3.5" />
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="truncate text-lg font-semibold tracking-tight text-primary sm:text-xl">
+              <template v-if="meta">{{ meta.title }}</template>
+              <span v-else class="inline-block h-6 w-40 animate-pulse rounded bg-muted align-middle" />
+            </h1>
+            <span
+              v-if="meta?.group"
+              class="hidden rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted sm:inline"
+            >
+              {{ meta.group }}
             </span>
           </div>
+          <p class="text-xs text-muted">
+            <template v-if="!meta || (loading && !rows.length)">Loading…</template>
+            <template v-else>
+              {{ total.toLocaleString() }} {{ total === 1 ? 'record' : 'records' }}
+              <template v-if="hasActiveFilters"> matching filters</template>
+              <span v-if="meta.key === 'trips'"> · counted per leg</span>
+            </template>
+          </p>
+        </div>
+      </div>
+
+      <Button v-if="meta?.create" variant="primary" size="md" @click="onCreateNew">
+        <Plus class="h-4 w-4" />
+        <span>New {{ singularTitle }}</span>
+      </Button>
+    </header>
+
+    <!-- Card: toolbar · table · footer -->
+    <section
+      class="relative flex min-h-[420px] flex-1 flex-col overflow-hidden rounded-xl border border-border-default bg-surface shadow-sm md:min-h-[320px]"
+    >
+      <template v-if="!meta && !error">
+        <div class="space-y-3 p-4">
+          <div class="h-9 w-full animate-pulse rounded-lg bg-muted" />
+          <div v-for="n in 8" :key="n" class="h-10 w-full animate-pulse rounded-md bg-muted/60" />
         </div>
       </template>
 
-      <!-- Empty State -->
-      <div v-if="!loading && rows.length === 0" class="p-8 text-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        <EmptyState
-          :title="hasActiveFilters ? 'No matching records' : `No ${meta.title.toLowerCase()} yet`"
-          :action-label="hasActiveFilters ? 'Clear filters' : (meta.create ? 'Create first record' : undefined)"
-          @action="hasActiveFilters ? onClearFilters() : onCreateNew()"
-        />
+      <div v-else-if="!meta && error" class="flex flex-1 items-center justify-center p-8">
+        <EmptyState variant="error" :description="error" action-text="Retry" @action="initMeta" />
       </div>
-    </div>
 
-    <!-- Pagination -->
-    <DataTablePagination
-      :page="page"
-      :page-size="pageSize"
-      :total="total"
-      @update:page="onPageChange"
-      @update:page-size="onPageSizeChange"
-    />
+      <template v-else>
+        <DataTableToolbar
+          class="shrink-0 border-b border-border-default"
+          :search="search"
+          :status="status"
+          :status-tabs="statusTabs"
+          :counts="counts"
+          :active-filters-count="filterComposable.activeCount.value"
+          :filter-chips="filterComposable.chips.value"
+          :all-columns="allColumns"
+          :hidden-columns="hiddenColumns"
+          :column-order="columnOrder"
+          :has-custom-widths="Object.keys(columnWidths).length > 0"
+          :density="density"
+          :is-fetching="isFetching"
+          :is-exporting="csvExport.exporting.value"
+          :last-updated="lastUpdated"
+          :saved-views="savedViewsComposable.views.value"
+          :active-view-id="savedViewsComposable.activeViewId.value"
+          :is-view-modified="savedViewsComposable.isModified({ filters: filterComposable.filters.value, ordering, density, search })"
+          @update:search="onSearchChange"
+          @update:status="onStatusChange"
+          @update:hidden-columns="hiddenColumns = $event"
+          @update:column-order="columnOrder = $event"
+          @update:density="setDensity"
+          @open-filters="isFiltersOpen = true"
+          @clear-filters="onClearFilters"
+          @filters-changed="onFiltersChanged"
+          @export="onExportCsv"
+          @refresh="loadData"
+          @reset-columns="resetColumns"
+          @apply-view="onApplyView"
+          @save-view="onSaveView"
+          @delete-view="savedViewsComposable.deleteView"
+        />
 
-    <!-- Selection Bulk Action Bar (Slides from bottom) -->
-    <DataTableBulkBar
-      :selected-count="selectedRowIds.length"
-      :total-count="total"
-      :is-all-matching="selectAllMatching"
-      :allow-delete="meta.create !== false && !meta.readonly"
-      @clear="clearSelection"
-      @select-all-matching="onSelectAllMatching"
-      @export-selected="onExportSelected"
-      @delete-selected="onDeleteSelected"
-    />
+        <!-- Desktop table -->
+        <DataTable
+          class="hidden md:flex"
+          :rows="rows"
+          :columns="adaptedColumns"
+          :fields="meta.fields"
+          :resource-key="resourceKey"
+          :resource-title="meta.title"
+          :meta="meta"
+          :hidden-columns="hiddenColumns"
+          :column-order="columnOrder"
+          :column-widths="columnWidths"
+          :ordering="ordering"
+          :selected-row-ids="selectedRowIds"
+          :is-page-selected="isPageSelected"
+          :is-page-partially-selected="isPagePartiallySelected"
+          :density="density"
+          :loading="loading"
+          :is-fetching="isFetching"
+          :error="error"
+          :page-size="pageSize"
+          :has-filters="hasActiveFilters"
+          @sort="onSort"
+          @row-click="onRowClick"
+          @row-open-new-tab="onRowOpenNewTab"
+          @toggle-select="toggleRowSelection"
+          @select-all="toggleSelectPage"
+          @clear-filters="onClearFilters"
+          @create="onCreateNew"
+          @retry="loadData"
+          @resize-column="onResizeColumn"
+          @view="openDetail"
+          @edit="openEdit"
+          @duplicate="onDuplicate"
+          @delete="onDeleteRow"
+        />
 
-    <!-- Slide-over Filters Drawer -->
+        <!-- Mobile cards -->
+        <div class="flex-1 space-y-2 p-2.5 md:hidden">
+          <template v-if="loading && !rows.length">
+            <div v-for="n in 5" :key="n" class="space-y-2 rounded-lg border border-border-default p-3.5">
+              <div class="flex items-center justify-between">
+                <div class="h-4 w-24 animate-pulse rounded bg-muted" />
+                <div class="h-5 w-16 animate-pulse rounded-full bg-muted" />
+              </div>
+              <div class="h-3 w-40 animate-pulse rounded bg-muted" />
+            </div>
+          </template>
+
+          <template v-else-if="rows.length">
+            <article
+              v-for="row in rows"
+              :key="row.id"
+              :class="[
+                'cursor-pointer rounded-lg border p-3.5 transition-colors active:bg-subtle',
+                selectedRowIds.includes(row.id)
+                  ? 'border-primary-300 bg-primary-50/60 dark:border-primary-800 dark:bg-primary-950/60'
+                  : 'border-border-default bg-surface'
+              ]"
+              @click="onRowClick(row)"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex min-w-0 items-center gap-2.5">
+                  <Checkbox
+                    :model-value="selectedRowIds.includes(row.id)"
+                    :aria-label="`Select ${row.number || row.code || row.id}`"
+                    @update:model-value="toggleRowSelection(row.id)"
+                  />
+                  <span class="truncate font-mono text-[13px] font-semibold text-primary">
+                    {{ row.number || row.code || row.name || `#${row.id}` }}
+                  </span>
+                </div>
+                <StatusPill
+                  v-if="row[meta.status || 'status']"
+                  :status="row[meta.status || 'status']"
+                  :label="row[`${meta.status || 'status'}_label`] || row.status_label"
+                  size="sm"
+                />
+              </div>
+
+              <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2.5 text-xs">
+                <div v-for="col in mobileKeyColumns" :key="col.name" class="min-w-0">
+                  <dt class="text-[11px] text-muted">{{ col.label }}</dt>
+                  <dd class="mt-0.5 truncate font-medium text-primary">
+                    <CellDispatcher :row="row" :name="col.name" :field="meta.fields[col.name]" :resource-key="resourceKey" />
+                  </dd>
+                </div>
+              </dl>
+
+              <div class="mt-3 flex items-center justify-between border-t border-border-default pt-2.5 text-[11px] text-muted">
+                <span>{{ formatRelative(row.updated_at || row.created_at) }}</span>
+                <span class="inline-flex items-center gap-0.5 font-medium text-primary-600 dark:text-primary-400">
+                  Open <ChevronRight class="h-3.5 w-3.5" />
+                </span>
+              </div>
+            </article>
+          </template>
+
+          <EmptyState
+            v-else-if="!error"
+            :variant="hasActiveFilters ? 'no-results' : 'no-data'"
+            :default-actions="false"
+            :title="hasActiveFilters ? 'No matching records' : `No ${meta.title.toLowerCase()} yet`"
+            :action-text="hasActiveFilters ? 'Clear filters' : (meta.create ? `New ${singularTitle.toLowerCase()}` : '')"
+            @action="hasActiveFilters ? onClearFilters() : onCreateNew()"
+          />
+          <EmptyState v-else variant="error" :description="error" action-text="Retry" @action="loadData" />
+        </div>
+
+        <!-- Footer -->
+        <DataTablePagination
+          class="shrink-0 border-t border-border-default bg-surface"
+          :page="page"
+          :page-size="pageSize"
+          :total="total"
+          @update:page="onPageChange"
+          @update:page-size="onPageSizeChange"
+        />
+
+        <DataTableBulkBar
+          :selected-count="selectedRowIds.length"
+          :total-count="total"
+          :is-all-matching="selectAllMatching"
+          :allow-delete="meta.create !== false && !meta.readonly"
+          @clear="clearSelection"
+          @select-all-matching="onSelectAllMatching"
+          @export-selected="onExportSelected"
+          @delete-selected="onDeleteSelected"
+        />
+      </template>
+    </section>
+
     <DataTableFilters
+      v-if="meta"
       :open="isFiltersOpen"
       :meta="meta"
       :filters="filterComposable.filters.value"
@@ -229,13 +235,14 @@
       @reset="filterComposable.clearAll"
     />
 
-    <!-- Slide-over Quick View Drawer -->
     <ResourceQuickView
+      v-if="meta"
       :open="isQuickViewOpen"
       :record="selectedRecord"
       :resource-key="resourceKey"
       :meta="meta"
       @update:open="isQuickViewOpen = $event"
+      @edit="openEdit"
     />
   </div>
 </template>
@@ -244,6 +251,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Plus, ChevronRight } from 'lucide-vue-next'
+import { getModuleIcon } from '../../layouts/moduleIcons'
 import api, { errText } from '../../api'
 import { formatRelative } from '../../utils/format'
 import { useToast } from '../../composables/useToast'
@@ -256,6 +264,7 @@ import { useUrlState } from '../../composables/useUrlState'
 
 import Button from '../ui/Button.vue'
 import StatusPill from '../ui/StatusPill.vue'
+import Checkbox from '../ui/Checkbox.vue'
 import EmptyState from '../feedback/EmptyState.vue'
 import DataTable from '../data-table/DataTable.vue'
 import DataTableToolbar from '../data-table/DataTableToolbar.vue'
@@ -311,6 +320,8 @@ const {
   loadData,
   sortBy,
   setDensity,
+  setColumnWidth,
+  resetColumnWidths,
   toggleRowSelection,
   toggleSelectPage,
   clearSelection,
@@ -340,7 +351,9 @@ watch(
     if (s.search !== undefined && s.search !== search.value) search.value = s.search
     if (s.status !== undefined && s.status !== status.value) status.value = s.status
     if (s.page !== undefined && Number(s.page) !== page.value) page.value = Number(s.page)
-    if (s.page_size !== undefined && Number(s.page_size) !== pageSize.value) pageSize.value = Number(s.page_size)
+    // Only honour page_size when it is explicitly in the URL; otherwise keep the
+    // user's saved rows-per-page preference.
+    if (route.query.page_size && Number(route.query.page_size) !== pageSize.value) pageSize.value = Number(route.query.page_size)
     if (s.ordering !== undefined && s.ordering !== ordering.value) ordering.value = s.ordering
 
     // Synchronize filters from route.query
@@ -362,7 +375,7 @@ watch([search, status, page, pageSize, ordering, filterComposable.filters, filte
     search: search.value || undefined,
     status: status.value !== 'all' ? status.value : undefined,
     page: page.value > 1 ? page.value : undefined,
-    page_size: pageSize.value !== 20 ? pageSize.value : undefined,
+    page_size: undefined, // rows-per-page is a stored preference, not URL state
     ordering: ordering.value || undefined,
   }
   for (const [k, v] of Object.entries(filterComposable.filters.value)) {
@@ -393,9 +406,26 @@ const adaptedColumns = computed(() => {
       label: field?.label || colName.replace(/_/g, ' ').replace(/^./, (s) => s.toUpperCase()),
       sortable: field?.type !== 'computed',
       align: isMoney || isNumeric ? 'right' : 'left',
+      width: defaultWidth(colName, field, isMoney, isNumeric),
     }
   })
 })
+
+function defaultWidth(name, field, isMoney, isNumeric) {
+  if (['id', 'number', 'code', 'reference'].includes(name) || name.endsWith('_ref')) return 180
+  if (name === 'status' || name.endsWith('_status')) return 200
+  if (isMoney) return 140
+  if (isNumeric) return 120
+  if (field?.type === 'bool') return 100
+  if (field?.type === 'date') return 130
+  if (field?.type === 'datetime' || name.endsWith('_at')) return 170
+  if (field?.type === 'fk' || ['customer', 'vendor', 'driver', 'vehicle'].includes(name)) return 210
+  if (name.includes('name') || name.includes('title') || name.includes('description')) return 220
+  if (name.includes('email') || name.includes('address')) return 230
+  return 160
+}
+
+const moduleIcon = computed(() => getModuleIcon(resourceKey.value))
 
 const mobileKeyColumns = computed(() => {
   if (!meta.value?.columns) return []
@@ -428,10 +458,23 @@ const hasActiveFilters = computed(() => {
 function resetColumns() {
   hiddenColumns.value = []
   columnOrder.value = []
+  resetColumnWidths()
+  toast.success('Column layout reset')
 }
 
 function onResizeColumn({ column, width }) {
-  tableComposable.setColumnWidth(column, width)
+  setColumnWidth(column, width)
+}
+
+function onSort(col) {
+  sortBy(col)
+  page.value = 1
+  loadData()
+}
+
+function onFiltersChanged() {
+  page.value = 1
+  loadData()
 }
 
 // Handlers
@@ -501,27 +544,29 @@ async function onDeleteSelected() {
 }
 
 // Row navigation
+function detailPath(row) {
+  return resourceKey.value === 'orders' ? `/orders/${row.id}` : `/r/${resourceKey.value}/${row.id}`
+}
+
 function onRowClick(row) {
   selectedRecord.value = row
   isQuickViewOpen.value = true
 }
 
 function onRowOpenNewTab(row) {
-  const url = resourceKey.value === 'orders' ? `/orders/${row.id}` : `/r/${resourceKey.value}/${row.id}`
-  window.open(url, '_blank')
+  window.open(router.resolve(detailPath(row)).href, '_blank', 'noopener')
 }
 
 function openDetail(row) {
-  const url = resourceKey.value === 'orders' ? `/orders/${row.id}` : `/r/${resourceKey.value}/${row.id}`
-  router.push(url)
+  router.push(detailPath(row))
 }
 
 function openEdit(row) {
+  isQuickViewOpen.value = false
   router.push(`/r/${resourceKey.value}/${row.id}/edit`)
 }
 
 function onDuplicate(row) {
-  toast.info(`Duplicating #${row.number || row.id}…`)
   router.push({
     path: `/r/${resourceKey.value}/new`,
     query: { duplicate_from: row.id },
@@ -532,6 +577,9 @@ async function onDeleteRow(row) {
   try {
     await api.delete(`${resourceKey.value}/${row.id}/`)
     toast.success('Record deleted')
+    selectedRowIds.value = selectedRowIds.value.filter((id) => id !== row.id)
+    // Step back a page if we just removed the last row on it.
+    if (rows.value.length === 1 && page.value > 1) page.value -= 1
     loadData()
   } catch (e) {
     toast.error(`Delete failed: ${errText(e)}`)
@@ -575,6 +623,7 @@ function onSaveView(name) {
 // Initialize on mount
 async function initMeta() {
   loading.value = true
+  error.value = ''
   try {
     const res = await api.get(`meta/${resourceKey.value}/`)
     meta.value = res.data

@@ -1,5 +1,5 @@
 <template>
-  <aside class="w-80 flex-shrink-0 space-y-4 sticky top-24 self-start select-none">
+  <aside class="w-80 flex-shrink-0 space-y-4 sticky top-4 self-start select-none">
     <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
         <div>

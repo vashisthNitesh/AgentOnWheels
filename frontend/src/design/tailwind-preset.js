@@ -126,11 +126,14 @@ export default {
         '30': '30',
         '40': '40',
         '50': '50',
-        'dropdown': '1000',
+        // Floating layers sit above drawers/modals so selects and menus opened
+        // inside a drawer or dialog are never hidden behind it.
+        'topbar': '30',
         'sticky': '1020',
         'fixed': '1030',
         'drawer': '1040',
         'modal': '1050',
+        'dropdown': '1060',
         'popover': '1060',
         'tooltip': '1070',
         'toast': '1080',
@@ -145,6 +148,10 @@ export default {
         'md': 'var(--shadow-md)',
         'lg': 'var(--shadow-lg)',
         'xl': 'var(--shadow-xl)',
+        'none': 'none',
+      },
+      backdropBlur: {
+        'xs': '2px',
       },
       borderRadius: {
         'sm': '6px',

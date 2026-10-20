@@ -1,100 +1,108 @@
 <template>
-  <div class="relative w-full flex items-center">
-    <!-- Prefix / Unit slot -->
+  <div class="w-full">
+    <!--
+      Input group: the wrapper owns the border and focus ring, so prefixes,
+      suffixes and action buttons of any width sit inline instead of being
+      absolutely positioned over the text.
+    -->
     <div
-      v-if="$slots.prefix || prefix"
-      class="absolute left-3 flex items-center pointer-events-none text-muted text-xs select-none"
-    >
-      <slot name="prefix">{{ prefix }}</slot>
-    </div>
-
-    <!-- Main Input -->
-    <input
-      :id="inputId"
-      ref="inputRef"
-      :name="name"
-      :type="computedType"
-      :value="modelValue ?? ''"
-      :disabled="disabled"
-      :readonly="readonly"
-      :placeholder="placeholder"
-      :autocomplete="autocomplete"
-      :aria-invalid="invalid || fieldCtx?.invalid?.value"
-      :aria-describedby="ariaDescribedby || fieldCtx?.describedBy?.value"
       :class="cn(
-        'w-full bg-surface text-primary border rounded-md transition placeholder:text-muted focus-ring',
-        sizeClasses,
-        (invalid || fieldCtx?.invalid?.value)
-          ? 'border-danger-500 focus:border-danger-500 ring-2 ring-danger-500/20'
-          : 'border-border-strong hover:border-slate-400 dark:hover:border-slate-500 focus:border-primary-500',
-        disabled && 'opacity-60 cursor-not-allowed bg-muted pointer-events-none',
-        readonly && 'bg-subtle cursor-default',
-        paddingLeftClass,
-        paddingRightClass,
-        $attrs.class
+        controlBase,
+        'flex items-stretch overflow-hidden px-0 focus-within:border-primary-500 focus-within:ring-4 focus-within:ring-primary-500/15 dark:focus-within:ring-primary-400/20',
+        wrapperSize,
+        isInvalid ? controlInvalid + ' focus-within:border-danger-500 focus-within:ring-danger-500/15' : 'border-border-strong hover:border-slate-400 dark:hover:border-slate-500',
+        disabled && controlDisabled,
+        readonly && 'bg-subtle'
       )"
-      @input="handleInput"
-      @keydown="handleKeyDown"
-      @keyup="handleKeyUp"
-      @focus="$emit('focus', $event)"
-      @blur="$emit('blur', $event)"
-    />
-
-    <!-- Right side controls: Clear button, Suffix, Password eye -->
-    <div
-      v-if="isPassword || (clearable && modelValue !== '' && modelValue !== null && !disabled && !readonly) || $slots.suffix || suffix"
-      class="absolute right-3 flex items-center gap-1.5"
+      @click="focus"
     >
-      <!-- Clearable button -->
-      <button
-        v-if="clearable && modelValue !== '' && modelValue !== null && !disabled && !readonly"
-        type="button"
-        tabindex="-1"
-        class="text-secondary hover:text-primary transition p-0.5 rounded focus-ring cursor-pointer"
-        aria-label="Clear input"
-        @click="clear"
+      <span
+        v-if="$slots.prefix || prefix"
+        class="flex shrink-0 items-center pl-3 pr-1 text-muted select-none"
+        :class="prefix && !$slots.prefix ? 'text-xs font-semibold tracking-wide' : ''"
       >
-        <X class="w-3.5 h-3.5" />
-      </button>
+        <slot name="prefix">{{ prefix }}</slot>
+      </span>
 
-      <!-- Suffix / Unit slot -->
-      <div
-        v-if="$slots.suffix || suffix"
-        class="flex items-center pointer-events-none text-muted text-xs select-none font-medium"
-      >
-        <slot name="suffix">{{ suffix }}</slot>
-      </div>
+      <input
+        :id="inputId"
+        ref="inputRef"
+        v-bind="inputAttrs"
+        :name="name"
+        :type="computedType"
+        :value="modelValue ?? ''"
+        :disabled="disabled"
+        :readonly="readonly"
+        :placeholder="placeholder"
+        :autocomplete="autocomplete"
+        :aria-invalid="isInvalid || undefined"
+        :aria-describedby="ariaDescribedby || fieldCtx?.describedBy?.value"
+        :class="cn(
+          'h-full min-w-0 flex-1 bg-transparent text-primary placeholder:text-muted outline-none border-0 focus:ring-0',
+          'disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          textSize,
+          ($slots.prefix || prefix) ? 'pl-1.5' : padX,
+          hasTrailing ? 'pr-1' : padX,
+          $attrs.class
+        )"
+        @input="handleInput"
+        @keydown="handleKeyState"
+        @keyup="handleKeyState"
+        @focus="$emit('focus', $event)"
+        @blur="$emit('blur', $event)"
+      />
 
-      <!-- Password visibility toggle -->
-      <button
-        v-if="isPassword"
-        type="button"
-        tabindex="-1"
-        class="text-secondary hover:text-primary transition p-0.5 rounded focus-ring cursor-pointer"
-        :aria-label="showPassword ? 'Hide password' : 'Show password'"
-        @click="showPassword = !showPassword"
-      >
-        <EyeOff v-if="showPassword" class="w-4 h-4" />
-        <Eye v-else class="w-4 h-4" />
-      </button>
+      <span v-if="hasTrailing" class="flex shrink-0 items-center gap-1 pr-2.5 pl-1">
+        <button
+          v-if="showClear"
+          type="button"
+          tabindex="-1"
+          class="rounded p-0.5 text-muted transition hover:bg-subtle hover:text-primary"
+          aria-label="Clear input"
+          @click.stop="clear"
+        >
+          <X class="h-3.5 w-3.5" />
+        </button>
+
+        <span
+          v-if="$slots.suffix || suffix"
+          class="select-none text-xs font-medium text-muted"
+        >
+          <slot name="suffix">{{ suffix }}</slot>
+        </span>
+
+        <button
+          v-if="isPassword"
+          type="button"
+          tabindex="-1"
+          class="rounded p-0.5 text-muted transition hover:bg-subtle hover:text-primary"
+          :aria-label="showPassword ? 'Hide password' : 'Show password'"
+          @click.stop="showPassword = !showPassword"
+        >
+          <EyeOff v-if="showPassword" class="h-4 w-4" />
+          <Eye v-else class="h-4 w-4" />
+        </button>
+      </span>
     </div>
 
-    <!-- Caps lock alert for passwords -->
-    <div
+    <p
       v-if="isPassword && capsLockActive"
-      class="absolute -bottom-5 right-0 text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium"
+      class="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400"
+      role="status"
     >
-      <span>⇪ Caps Lock is on</span>
-    </div>
+      <ArrowBigUp class="h-3.5 w-3.5" />
+      Caps Lock is on
+    </p>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, inject, useSlots } from 'vue'
-import { Eye, EyeOff, X } from 'lucide-vue-next'
+import { ref, computed, inject, useAttrs, useSlots } from 'vue'
+import { Eye, EyeOff, X, ArrowBigUp } from 'lucide-vue-next'
 import { cn } from '../../utils/cn'
+import { controlBase, controlInvalid, controlDisabled } from './controlStyles'
 
-const slots = useSlots()
+defineOptions({ inheritAttrs: false })
 
 const props = defineProps({
   modelValue: {
@@ -134,6 +142,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  error: {
+    type: Boolean,
+    default: false,
+  },
   prefix: {
     type: String,
     default: '',
@@ -158,44 +170,43 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'input', 'change', 'blur', 'focus'])
 
+const attrs = useAttrs()
+const slots = useSlots()
 const fieldCtx = inject('formField', null)
 const inputId = computed(() => props.id || fieldCtx?.fieldId?.value || undefined)
+
+// Everything except `class` (handled above) goes onto the native input, so
+// attributes such as step, min, max, inputmode and maxlength actually work.
+const inputAttrs = computed(() => {
+  const { class: _c, ...rest } = attrs
+  return rest
+})
 
 const inputRef = ref(null)
 const showPassword = ref(false)
 const capsLockActive = ref(false)
 
 const isPassword = computed(() => props.type === 'password')
+const isInvalid = computed(() => props.invalid || props.error || !!fieldCtx?.invalid?.value)
 
 const computedType = computed(() => {
-  if (isPassword.value) {
-    return showPassword.value ? 'text' : 'password'
-  }
+  if (isPassword.value) return showPassword.value ? 'text' : 'password'
   return props.type
 })
 
-const sizeClasses = computed(() => {
-  return {
-    sm: 'h-8 text-xs px-2.5',
-    md: 'h-9 text-sm px-3',
-    lg: 'h-10 text-base px-3.5',
-  }[props.size]
-})
+const wrapperSize = computed(() => ({
+  sm: 'h-8 rounded-md',
+  md: 'h-9 rounded-lg',
+  lg: 'h-11 rounded-lg',
+}[props.size]))
 
-const paddingLeftClass = computed(() => {
-  if (!props.prefix && !slots.prefix) return ''
-  if (props.prefix && props.prefix.length > 2) return 'pl-14'
-  return 'pl-9'
-})
+const textSize = computed(() => (props.size === 'sm' ? 'text-xs' : 'text-sm'))
+const padX = computed(() => (props.size === 'sm' ? 'px-2.5' : props.size === 'lg' ? 'px-3.5' : 'px-3'))
 
-const paddingRightClass = computed(() => {
-  const hasSuffix = Boolean(props.suffix || slots.suffix)
-  const hasAction = Boolean(isPassword.value || (props.clearable && props.modelValue !== '' && props.modelValue !== null))
-  if (hasSuffix && hasAction) return 'pr-20'
-  if (hasSuffix) return (props.suffix?.length > 3 ? 'pr-16' : 'pr-12')
-  if (hasAction || props.clearable) return 'pr-10'
-  return ''
-})
+const showClear = computed(
+  () => props.clearable && props.modelValue !== '' && props.modelValue !== null && props.modelValue !== undefined && !props.disabled && !props.readonly
+)
+const hasTrailing = computed(() => Boolean(showClear.value || props.suffix || slots.suffix || isPassword.value))
 
 function handleInput(e) {
   let val = e.target.value
@@ -211,20 +222,15 @@ function clear() {
   inputRef.value?.focus()
 }
 
-function handleKeyDown(e) {
+function handleKeyState(e) {
   if (isPassword.value && e.getModifierState) {
     capsLockActive.value = e.getModifierState('CapsLock')
   }
 }
 
-function handleKeyUp(e) {
-  if (isPassword.value && e.getModifierState) {
-    capsLockActive.value = e.getModifierState('CapsLock')
-  }
+function focus() {
+  inputRef.value?.focus()
 }
 
-defineExpose({
-  focus: () => inputRef.value?.focus(),
-  inputRef,
-})
+defineExpose({ focus, inputRef })
 </script>

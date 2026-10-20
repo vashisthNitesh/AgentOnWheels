@@ -1,11 +1,11 @@
-import { ref, computed } from 'vue'
+import { ref, computed, unref } from 'vue'
 
 /**
  * useSavedViews
  * Manages custom user-saved views in localStorage per resource key.
  */
 export function useSavedViews(resourceKey) {
-  const storageKey = computed(() => `aow_saved_views_${resourceKey.value || resourceKey}`)
+  const storageKey = computed(() => `aow_saved_views_${unref(resourceKey)}`)
   const views = ref([])
   const activeViewId = ref(null)
 

@@ -1,19 +1,17 @@
 <template>
-  <div :class="cn('flex flex-col gap-1.5 w-full', $attrs.class)">
-    <!-- Label Row -->
-    <div v-if="label || $slots.label || optional" class="flex items-center justify-between">
+  <div :class="cn('flex w-full min-w-0 flex-col gap-1.5', $attrs.class)">
+    <div v-if="label || $slots.label || optional" class="flex items-baseline justify-between gap-2">
       <label
         v-if="label || $slots.label"
         :for="fieldId"
-        class="text-xs font-medium text-primary select-none flex items-center gap-1"
+        class="flex items-center gap-1 text-[13px] font-medium text-primary select-none"
       >
         <slot name="label">{{ label }}</slot>
-        <span v-if="required" class="text-danger-500 font-semibold" aria-hidden="true">*</span>
+        <span v-if="required" class="text-danger-500" aria-hidden="true">*</span>
       </label>
       <span v-if="optional && !required" class="text-[11px] text-muted select-none">Optional</span>
     </div>
 
-    <!-- Input Control Slot -->
     <div class="w-full">
       <slot
         :id="fieldId"
@@ -23,20 +21,19 @@
       />
     </div>
 
-    <!-- Error or Hint Row -->
     <p
       v-if="error"
       :id="errorId"
       role="alert"
-      class="text-xs text-danger-600 dark:text-danger-400 flex items-center gap-1 mt-0.5 animate-in fade-in duration-150"
+      class="flex items-start gap-1 text-xs text-danger-600 animate-in fade-in-0 slide-in-from-top-2 dark:text-danger-500"
     >
-      <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+      <AlertCircle class="mt-px h-3.5 w-3.5 shrink-0" />
       <span>{{ error }}</span>
     </p>
     <p
       v-else-if="hint || $slots.hint"
       :id="hintId"
-      class="text-xs text-secondary mt-0.5"
+      class="text-xs text-muted"
     >
       <slot name="hint">{{ hint }}</slot>
     </p>
@@ -44,37 +41,21 @@
 </template>
 
 <script setup>
-import { computed, provide, ref } from 'vue'
+import { computed, provide } from 'vue'
 import { AlertCircle } from 'lucide-vue-next'
 import { cn } from '../../utils/cn'
+
+defineOptions({ inheritAttrs: false })
 
 let idCounter = 0
 
 const props = defineProps({
-  id: {
-    type: String,
-    default: '',
-  },
-  label: {
-    type: String,
-    default: '',
-  },
-  hint: {
-    type: String,
-    default: '',
-  },
-  error: {
-    type: String,
-    default: '',
-  },
-  required: {
-    type: Boolean,
-    default: false,
-  },
-  optional: {
-    type: Boolean,
-    default: false,
-  },
+  id: { type: String, default: '' },
+  label: { type: String, default: '' },
+  hint: { type: String, default: '' },
+  error: { type: String, default: '' },
+  required: { type: Boolean, default: false },
+  optional: { type: Boolean, default: false },
 })
 
 const autoId = `aow-field-${++idCounter}`

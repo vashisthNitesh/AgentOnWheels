@@ -6,3 +6,4 @@ node_modules/
 frontend/dist/
 staticfiles/
 db.sqlite3
+.claude/

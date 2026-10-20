@@ -9,19 +9,17 @@
     <CheckboxRoot
       :id="checkboxId"
       :model-value="modelValue"
-      :checked="modelValue"
       :disabled="disabled"
       :aria-invalid="invalid || fieldCtx?.invalid?.value"
-      :aria-checked="modelValue === 'indeterminate' ? 'mixed' : Boolean(modelValue)"
       :class="cn(
-        'w-4 h-4 rounded border flex items-center justify-center transition-colors focus-ring',
+        'w-4 h-4 shrink-0 rounded-[5px] border flex items-center justify-center transition-colors focus-ring',
         modelValue
           ? 'bg-primary-600 border-primary-600 text-white dark:bg-primary-500 dark:border-primary-500'
-          : 'bg-surface border-border-strong hover:border-slate-400 dark:hover:border-slate-500',
+          : 'bg-surface border-border-strong hover:border-primary-400 dark:hover:border-slate-500',
         (invalid || fieldCtx?.invalid?.value) && 'border-danger-500 ring-2 ring-danger-500/20'
       )"
       @update:model-value="$emit('update:modelValue', $event)"
-      @update:checked="$emit('update:modelValue', $event)"
+      @click.stop
     >
       <span v-if="modelValue" class="flex items-center justify-center text-current">
         <Minus v-if="modelValue === 'indeterminate'" class="w-3 h-3 stroke-[3]" />

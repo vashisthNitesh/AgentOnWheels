@@ -1,13 +1,12 @@
 <template>
-  <div class="space-y-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto select-none sm:select-auto">
+  <div class="mx-auto w-full max-w-7xl space-y-6">
     <!-- Sticky Global Filter Bar -->
-    <div class="sticky top-16 z-20 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xs space-y-3">
+    <div class="sticky top-0 z-20 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xs space-y-3">
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <!-- Title & Period Subtitle -->
         <div>
           <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <span>📊</span>
-            <span>Operations Dashboard</span>
+            <span>Operations dashboard</span>
           </h1>
           <p v-if="dashboardData?.period" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {{ formatDate(dashboardData.period.start) }} – {{ formatDate(dashboardData.period.end) }}
@@ -27,7 +26,7 @@
               :class="[
                 'px-2.5 py-1 rounded-md transition-all cursor-pointer',
                 range === r && !from && !to
-                  ? 'bg-brand-600 text-white shadow-xs'
+                  ? 'bg-primary-600 text-white shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               ]"
               @click="setPresetRange(r)"
@@ -37,19 +36,13 @@
           </div>
 
           <!-- Custom Date Inputs -->
-          <div class="flex items-center gap-1.5 text-xs">
-            <input
-              type="date"
-              v-model="from"
-              class="h-8 px-2 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-1 focus:ring-brand-500"
-            />
-            <span class="text-slate-400">–</span>
-            <input
-              type="date"
-              v-model="to"
-              class="h-8 px-2 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-1 focus:ring-brand-500"
-            />
-          </div>
+          <DateRangePicker
+            v-model:start-value="from"
+            v-model:end-value="to"
+            size="sm"
+            placeholder="Custom range"
+            class="w-[230px]"
+          />
 
           <!-- Reset Filters Button -->
           <button
@@ -534,6 +527,7 @@ import { useUrlState } from '../composables/useUrlState'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Select from '../components/ui/Select.vue'
+import DateRangePicker from '../components/ui/DateRangePicker.vue'
 import Combobox from '../components/ui/Combobox.vue'
 import KpiCard from '../components/ui/KpiCard.vue'
 

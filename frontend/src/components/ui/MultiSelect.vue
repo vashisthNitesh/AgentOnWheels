@@ -1,237 +1,220 @@
 <template>
-  <div ref="containerRef" :class="cn('relative w-full', isOpen && 'z-50')">
-    <!-- Trigger Box -->
-    <div
-      :id="triggerId"
-      tabindex="0"
-      :aria-haspopup="'listbox'"
-      :aria-expanded="isOpen"
-      :class="cn(
-        'w-full min-h-[36px] flex flex-wrap items-center gap-1.5 p-1.5 bg-surface text-primary border rounded-md transition text-left focus-ring select-none cursor-pointer',
-        (invalid || fieldCtx?.invalid?.value)
-          ? 'border-danger-500 ring-2 ring-danger-500/20'
-          : 'border-border-strong hover:border-slate-400 dark:hover:border-slate-500 focus-within:border-primary-500',
-        disabled && 'opacity-60 cursor-not-allowed bg-muted pointer-events-none',
-        $attrs.class
-      )"
-      @click="toggleOpen"
-      @keydown.down.prevent="openAndFocus"
-      @keydown.backspace="handleBackspace"
-      @keydown.esc="close"
-    >
-      <!-- Empty Placeholder -->
-      <span v-if="!selectedList.length" class="text-muted font-normal text-xs px-1.5 select-none">
-        {{ placeholder }}
-      </span>
+  <PopoverRoot v-model:open="isOpen">
+    <PopoverTrigger as-child>
+      <div
+        :id="triggerId"
+        v-bind="restAttrs"
+        role="combobox"
+        tabindex="0"
+        aria-haspopup="listbox"
+        :aria-expanded="isOpen"
+        :aria-invalid="isInvalid || undefined"
+        :class="cn(
+          controlBase,
+          'flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg py-1 pl-1.5 pr-2 text-left text-sm select-none cursor-pointer',
+          isInvalid ? controlInvalid : (isOpen ? controlOpen : controlIdle),
+          disabled && controlDisabled,
+          $attrs.class
+        )"
+        @keydown.down.prevent="isOpen = true"
+        @keydown.enter.prevent="isOpen = true"
+        @keydown.backspace="handleBackspace"
+      >
+        <span v-if="!selectedList.length" class="px-1.5 text-muted">
+          {{ placeholder }}
+        </span>
 
-      <!-- Selected Chips -->
-      <template v-else>
-        <span
-          v-for="item in visibleChips"
-          :key="getOptValue(item)"
-          class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-subtle border border-border-default text-xs font-medium text-primary select-none"
-        >
-          <span class="truncate max-w-[140px]">{{ getOptLabel(item) }}</span>
+        <template v-else>
+          <span
+            v-for="item in visibleChips"
+            :key="getOptValue(item)"
+            class="inline-flex max-w-full items-center gap-1 rounded-md border border-primary-200 bg-primary-50 py-0.5 pl-2 pr-1 text-xs font-medium text-primary-800 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-200"
+          >
+            <span class="max-w-[160px] truncate">{{ getOptLabel(item) }}</span>
+            <span
+              role="button"
+              tabindex="-1"
+              class="rounded p-0.5 text-primary-500 transition hover:bg-primary-100 hover:text-primary-800 dark:hover:bg-primary-900"
+              :aria-label="`Remove ${getOptLabel(item)}`"
+              @click.stop.prevent="removeItem(getOptValue(item))"
+            >
+              <X class="h-3 w-3" />
+            </span>
+          </span>
+          <span
+            v-if="overflowCount > 0"
+            class="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-secondary"
+          >
+            +{{ overflowCount }}
+          </span>
+        </template>
+
+        <span class="ml-auto flex shrink-0 items-center gap-1 pl-1">
+          <Spinner v-if="isLoading && !isOpen" size="xs" class="text-muted" />
+          <span
+            v-if="clearable && selectedList.length > 0 && !disabled"
+            role="button"
+            tabindex="-1"
+            class="rounded p-0.5 text-muted transition hover:bg-subtle hover:text-primary"
+            aria-label="Clear all"
+            @click.stop.prevent="clearAll"
+          >
+            <X class="h-3.5 w-3.5" />
+          </span>
+          <ChevronsUpDown class="h-4 w-4 text-muted" />
+        </span>
+      </div>
+    </PopoverTrigger>
+
+    <PopoverPortal>
+      <PopoverContent
+        align="start"
+        :side-offset="6"
+        :collision-padding="12"
+        :class="cn(
+          floatingPanel,
+          'z-dropdown flex w-[var(--reka-popover-trigger-width)] min-w-[260px] flex-col overflow-hidden',
+          'max-h-[min(400px,var(--reka-popover-content-available-height))]'
+        )"
+        @open-auto-focus.prevent="focusSearch"
+        @close-auto-focus="$emit('blur')"
+      >
+        <div class="flex items-center gap-2 border-b border-border-default px-3">
+          <Search class="h-4 w-4 shrink-0 text-muted" />
+          <input
+            ref="searchInputRef"
+            v-model="searchQuery"
+            type="text"
+            class="h-10 w-full border-0 bg-transparent px-0 text-sm text-primary placeholder:text-muted outline-none focus:ring-0"
+            placeholder="Search…"
+            @input="onSearchInput"
+            @keydown.down.prevent="navigate(1)"
+            @keydown.up.prevent="navigate(-1)"
+            @keydown.enter.prevent="toggleHighlighted"
+          />
+          <Spinner v-if="isLoading" size="xs" class="shrink-0 text-primary-600" />
+        </div>
+
+        <div ref="listRef" class="min-h-0 flex-1 overflow-y-auto p-1" role="listbox" aria-multiselectable="true">
+          <div v-if="fetchError" class="p-4 text-center text-xs text-danger-600">
+            <p>{{ fetchError }}</p>
+            <button type="button" class="mt-1 font-medium text-primary-600 hover:underline" @click="fetchOptions">Retry</button>
+          </div>
+
+          <div v-else-if="isLoading && !displayedOptions.length" class="space-y-1 p-1">
+            <div v-for="n in 4" :key="n" class="h-8 animate-pulse rounded-md bg-muted" />
+          </div>
+
+          <div v-else-if="!displayedOptions.length" class="px-3 py-6 text-center text-xs text-muted">
+            {{ searchQuery ? `No results for “${searchQuery}”` : 'No options available' }}
+          </div>
+
+          <template v-else>
+          <div
+            v-for="(opt, idx) in displayedOptions"
+            :key="getOptValue(opt)"
+            role="option"
+            :aria-selected="isItemSelected(opt)"
+            :data-idx="idx"
+            :class="cn(optionRow, highlighted === idx && 'bg-subtle')"
+            @mouseenter="highlighted = idx"
+            @mousedown.prevent
+            @click="toggleItem(opt)"
+          >
+            <span
+              :class="cn(
+                'flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors',
+                isItemSelected(opt)
+                  ? 'border-primary-600 bg-primary-600 text-white dark:border-primary-500 dark:bg-primary-500'
+                  : 'border-border-strong bg-surface'
+              )"
+            >
+              <Check v-if="isItemSelected(opt)" class="h-3 w-3 stroke-[3]" />
+            </span>
+            <span class="min-w-0 flex-1 truncate">{{ getOptLabel(opt) }}</span>
+          </div>
+          </template>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-border-default bg-subtle/60 px-3 py-2 text-xs">
           <button
             type="button"
-            tabindex="-1"
-            class="text-secondary hover:text-danger-600 transition p-0.5 rounded"
-            aria-label="Remove item"
-            @click.stop="removeItem(getOptValue(item))"
+            class="font-medium text-primary-600 hover:underline disabled:opacity-40 dark:text-primary-400"
+            :disabled="!displayedOptions.length"
+            @click="selectAllFiltered"
           >
-            <X class="w-3 h-3" />
+            Select all ({{ displayedOptions.length }})
           </button>
-        </span>
-
-        <!-- +N more badge -->
-        <span
-          v-if="overflowCount > 0"
-          class="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[11px] font-semibold text-secondary"
-        >
-          +{{ overflowCount }} more
-        </span>
-      </template>
-
-      <!-- Right Icons -->
-      <div class="ml-auto flex items-center gap-1 pr-1 shrink-0">
-        <button
-          v-if="clearable && selectedList.length > 0 && !disabled"
-          type="button"
-          tabindex="-1"
-          class="text-secondary hover:text-primary p-0.5 rounded transition"
-          aria-label="Clear all"
-          @click.stop="clearAll"
-        >
-          <X class="w-3.5 h-3.5" />
-        </button>
-        <ChevronDown :class="cn('w-4 h-4 text-secondary transition-transform shrink-0', isOpen && 'rotate-180')" />
-      </div>
-    </div>
-
-    <!-- Dropdown Menu -->
-    <div
-      v-if="isOpen"
-      ref="popoverRef"
-      :class="cn(
-        'absolute left-0 z-dropdown w-full min-w-[260px] max-h-[340px] rounded-lg border border-border-default bg-surface-raised bg-white dark:bg-slate-900 text-primary shadow-xl shadow-slate-950/15 dark:shadow-black/60 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150',
-        openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
-      )"
-      @keydown.esc="close"
-    >
-      <!-- Search Input -->
-      <div class="p-2 border-b border-border-default flex items-center gap-2 bg-subtle">
-        <Search class="w-4 h-4 text-muted shrink-0 ml-1" />
-        <input
-          ref="searchInputRef"
-          v-model="searchQuery"
-          type="text"
-          class="w-full bg-transparent text-xs text-primary placeholder:text-muted focus:outline-none"
-          placeholder="Search items…"
-          @input="onSearchInput"
-        />
-        <Spinner v-if="loading" size="xs" class="text-primary-600 shrink-0 mr-1" />
-      </div>
-
-      <!-- Items List -->
-      <div class="overflow-y-auto p-1 max-h-[220px] flex-1">
-        <div v-if="fetchError" class="p-3 text-center text-xs text-danger-600">
-          <p>{{ fetchError }}</p>
-          <button type="button" class="mt-1 text-primary-600 underline" @click="fetchOptions">Retry</button>
-        </div>
-
-        <div v-else-if="!loading && displayedOptions.length === 0" class="p-4 text-center text-xs text-muted">
-          No results for "{{ searchQuery }}"
-        </div>
-
-        <div
-          v-for="opt in displayedOptions"
-          :key="getOptValue(opt)"
-          :class="cn(
-            'flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs cursor-pointer select-none transition-colors hover:bg-subtle',
-            isItemSelected(opt) && 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-medium'
-          )"
-          @click="toggleItem(opt)"
-        >
-          <div
-            :class="cn(
-              'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors',
-              isItemSelected(opt)
-                ? 'bg-primary-600 border-primary-600 text-white dark:bg-primary-500'
-                : 'border-border-strong bg-surface'
-            )"
+          <span class="text-muted">{{ (modelValue || []).length }} selected</span>
+          <button
+            type="button"
+            class="text-secondary hover:text-danger-600 hover:underline disabled:opacity-40"
+            :disabled="!(modelValue || []).length"
+            @click="clearAll"
           >
-            <Check v-if="isItemSelected(opt)" class="w-3 h-3 stroke-[2.5]" />
-          </div>
-          <span class="truncate flex-1">{{ getOptLabel(opt) }}</span>
+            Clear
+          </button>
         </div>
-      </div>
-
-      <!-- Footer: Select All / Clear -->
-      <div class="p-2 border-t border-border-default bg-subtle flex items-center justify-between text-xs">
-        <button
-          type="button"
-          class="text-primary-600 dark:text-primary-400 hover:underline font-medium"
-          @click="selectAllFiltered"
-        >
-          Select all ({{ displayedOptions.length }})
-        </button>
-        <button
-          type="button"
-          class="text-secondary hover:text-danger-600 hover:underline"
-          @click="clearAll"
-        >
-          Clear
-        </button>
-      </div>
-    </div>
-  </div>
+      </PopoverContent>
+    </PopoverPortal>
+  </PopoverRoot>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, inject } from 'vue'
-import { Search, ChevronDown, Check, X } from 'lucide-vue-next'
-import { onClickOutside } from '@vueuse/core'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, inject, useAttrs } from 'vue'
+import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'reka-ui'
+import { Search, ChevronsUpDown, Check, X } from 'lucide-vue-next'
 import api from '../../api'
 import { cn } from '../../utils/cn'
 import Spinner from './Spinner.vue'
+import {
+  controlBase, controlIdle, controlOpen, controlInvalid, controlDisabled, floatingPanel, optionRow,
+} from './controlStyles'
+
+defineOptions({ inheritAttrs: false })
 
 const props = defineProps({
-  modelValue: {
-    type: Array,
-    default: () => [],
-  },
-  options: {
-    type: Array,
-    default: () => [],
-  },
-  resource: {
-    type: String,
-    default: '',
-  },
-  valueKey: {
-    type: String,
-    default: 'id',
-  },
-  labelKey: {
-    type: String,
-    default: 'display',
-  },
-  placeholder: {
-    type: String,
-    default: 'Select multiple…',
-  },
-  maxChips: {
-    type: Number,
-    default: 3,
-  },
-  disabled: {
-    type: Boolean,
-    default: false,
-  },
-  invalid: {
-    type: Boolean,
-    default: false,
-  },
-  clearable: {
-    type: Boolean,
-    default: true,
-  },
-  id: {
-    type: String,
-    default: '',
-  },
+  modelValue: { type: Array, default: () => [] },
+  options: { type: Array, default: () => [] },
+  resource: { type: String, default: '' },
+  valueKey: { type: String, default: 'id' },
+  labelKey: { type: String, default: 'display' },
+  placeholder: { type: String, default: 'Select multiple…' },
+  maxChips: { type: Number, default: 3 },
+  disabled: { type: Boolean, default: false },
+  invalid: { type: Boolean, default: false },
+  error: { type: Boolean, default: false },
+  loading: { type: Boolean, default: false },
+  clearable: { type: Boolean, default: true },
+  id: { type: String, default: '' },
 })
 
-const emit = defineEmits(['update:modelValue', 'change', 'clear'])
+const emit = defineEmits(['update:modelValue', 'change', 'clear', 'blur'])
+
+const attrs = useAttrs()
+const restAttrs = computed(() => {
+  const { class: _c, ...rest } = attrs
+  return rest
+})
 
 const fieldCtx = inject('formField', null)
 const triggerId = computed(() => props.id || fieldCtx?.fieldId?.value || undefined)
+const isInvalid = computed(() => props.invalid || props.error || !!fieldCtx?.invalid?.value)
 
-const containerRef = ref(null)
 const searchInputRef = ref(null)
-
+const listRef = ref(null)
 const isOpen = ref(false)
 const searchQuery = ref('')
-const loading = ref(false)
+const fetching = ref(false)
 const fetchError = ref('')
 const fetchedOptions = ref([])
-const openUpward = ref(false)
+const highlighted = ref(0)
+let debounceTimer = null
 
-function checkPosition() {
-  if (!containerRef.value || typeof window === 'undefined') return
-  const rect = containerRef.value.getBoundingClientRect()
-  const spaceBelow = window.innerHeight - rect.bottom
-  openUpward.value = spaceBelow < 340 && rect.top > 340
-}
-
-onClickOutside(containerRef, () => {
-  if (isOpen.value) close()
-})
+const isLoading = computed(() => fetching.value || props.loading)
 
 function getOptValue(opt) {
-  if (typeof opt === 'object' && opt !== null) {
-    return opt[props.valueKey] ?? opt.value ?? opt.id
-  }
+  if (typeof opt === 'object' && opt !== null) return opt[props.valueKey] ?? opt.value ?? opt.id
   return opt
 }
 
@@ -242,126 +225,115 @@ function getOptLabel(opt) {
   return String(opt)
 }
 
-const allPool = computed(() => {
-  if (props.resource) return fetchedOptions.value
-  return props.options
-})
+const allPool = computed(() => (props.resource ? fetchedOptions.value : props.options))
 
 const displayedOptions = computed(() => {
-  const pool = allPool.value
-  if (!searchQuery.value.trim()) return pool
   const q = searchQuery.value.toLowerCase().trim()
-  return pool.filter(o => getOptLabel(o).toLowerCase().includes(q))
+  if (!q || props.resource) return allPool.value
+  return allPool.value.filter((o) => getOptLabel(o).toLowerCase().includes(q))
 })
 
-const selectedList = computed(() => {
-  const selectedVals = (props.modelValue || []).map(String)
-  return allPool.value.filter(o => selectedVals.includes(String(getOptValue(o))))
-})
+const selectedSet = computed(() => new Set((props.modelValue || []).map(String)))
 
-const visibleChips = computed(() => {
-  return selectedList.value.slice(0, props.maxChips)
-})
-
-const overflowCount = computed(() => {
-  return Math.max(0, selectedList.value.length - props.maxChips)
-})
+const selectedList = computed(() => allPool.value.filter((o) => selectedSet.value.has(String(getOptValue(o)))))
+const visibleChips = computed(() => selectedList.value.slice(0, props.maxChips))
+const overflowCount = computed(() => Math.max(0, selectedList.value.length - props.maxChips))
 
 function isItemSelected(opt) {
-  const val = String(getOptValue(opt))
-  return (props.modelValue || []).map(String).includes(val)
+  return selectedSet.value.has(String(getOptValue(opt)))
+}
+
+function emitValue(next) {
+  emit('update:modelValue', next)
+  emit('change', next)
 }
 
 function toggleItem(opt) {
   const val = getOptValue(opt)
   const current = [...(props.modelValue || [])]
-  const idx = current.findIndex(v => String(v) === String(val))
-  if (idx >= 0) {
-    current.splice(idx, 1)
-  } else {
-    current.push(val)
-  }
-  emit('update:modelValue', current)
-  emit('change', current)
+  const idx = current.findIndex((v) => String(v) === String(val))
+  if (idx >= 0) current.splice(idx, 1)
+  else current.push(val)
+  emitValue(current)
 }
 
 function removeItem(val) {
-  const current = (props.modelValue || []).filter(v => String(v) !== String(val))
-  emit('update:modelValue', current)
-  emit('change', current)
+  emitValue((props.modelValue || []).filter((v) => String(v) !== String(val)))
 }
 
 function clearAll() {
-  emit('update:modelValue', [])
-  emit('change', [])
+  emitValue([])
   emit('clear')
 }
 
 function selectAllFiltered() {
-  const current = new Set((props.modelValue || []).map(String))
-  displayedOptions.value.forEach(o => current.add(String(getOptValue(o))))
-  const updated = Array.from(current).map(Number)
-  emit('update:modelValue', updated)
-  emit('change', updated)
+  // Preserve the original value types (numbers stay numbers, strings stay strings).
+  const current = [...(props.modelValue || [])]
+  const seen = new Set(current.map(String))
+  for (const o of displayedOptions.value) {
+    const v = getOptValue(o)
+    if (!seen.has(String(v))) {
+      seen.add(String(v))
+      current.push(v)
+    }
+  }
+  emitValue(current)
 }
 
 function handleBackspace() {
-  if (selectedList.value.length > 0 && !searchQuery.value) {
-    const last = selectedList.value[selectedList.value.length - 1]
-    removeItem(getOptValue(last))
+  if (selectedList.value.length > 0 && !isOpen.value) {
+    removeItem(getOptValue(selectedList.value[selectedList.value.length - 1]))
   }
 }
 
-let debounceTimer = null
+function navigate(dir) {
+  const len = displayedOptions.value.length
+  if (!len) return
+  highlighted.value = (highlighted.value + dir + len) % len
+  nextTick(() => listRef.value?.querySelector(`[data-idx="${highlighted.value}"]`)?.scrollIntoView({ block: 'nearest' }))
+}
+
+function toggleHighlighted() {
+  const opt = displayedOptions.value[highlighted.value]
+  if (opt) toggleItem(opt)
+}
+
 function onSearchInput() {
+  highlighted.value = 0
   if (props.resource) {
     clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => {
-      fetchOptions()
-    }, 250)
+    debounceTimer = setTimeout(fetchOptions, 250)
   }
 }
 
 async function fetchOptions() {
   if (!props.resource) return
-  loading.value = true
+  fetching.value = true
   fetchError.value = ''
   try {
     const res = await api.get(`${props.resource}/`, {
       params: { search: searchQuery.value || undefined, page_size: 100 },
     })
     fetchedOptions.value = res.data?.results || []
-  } catch (err) {
+  } catch {
     fetchError.value = 'Failed to load options.'
   } finally {
-    loading.value = false
+    fetching.value = false
   }
 }
 
-function toggleOpen() {
-  if (isOpen.value) close()
-  else openAndFocus()
+function focusSearch() {
+  nextTick(() => searchInputRef.value?.focus())
 }
 
-function openAndFocus() {
-  checkPosition()
-  isOpen.value = true
-  if (props.resource && fetchedOptions.value.length === 0) {
-    fetchOptions()
-  }
-  nextTick(() => {
-    searchInputRef.value?.focus()
-  })
-}
-
-function close() {
-  isOpen.value = false
-  searchQuery.value = ''
-}
+watch(isOpen, (open) => {
+  if (open) highlighted.value = 0
+  else searchQuery.value = ''
+})
 
 onMounted(() => {
-  if (props.resource) {
-    fetchOptions()
-  }
+  if (props.resource) fetchOptions()
 })
+
+onUnmounted(() => clearTimeout(debounceTimer))
 </script>

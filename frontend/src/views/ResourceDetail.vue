@@ -1,6 +1,6 @@
 <template>
   <!-- Error / 404 State -->
-  <div v-if="error" class="max-w-5xl mx-auto p-6 sm:p-12 text-center">
+  <div v-if="error" class="mx-auto w-full max-w-5xl py-12 text-center">
     <EmptyState
       title="Record Not Found"
       :description="error"
@@ -10,7 +10,7 @@
   </div>
 
   <!-- Loading Skeletons -->
-  <div v-else-if="loading || !record || !meta" class="max-w-6xl mx-auto p-4 sm:p-8 space-y-6">
+  <div v-else-if="loading || !record || !meta" class="mx-auto w-full max-w-6xl space-y-6">
     <div class="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
     <div class="flex justify-between items-center">
       <div class="h-10 w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
@@ -20,7 +20,7 @@
   </div>
 
   <!-- Main Resource Detail View -->
-  <div v-else class="max-w-6xl mx-auto p-4 sm:p-8 space-y-6">
+  <div v-else class="mx-auto w-full max-w-6xl space-y-6">
     <!-- Top Breadcrumb -->
     <div class="flex items-center justify-between">
       <router-link

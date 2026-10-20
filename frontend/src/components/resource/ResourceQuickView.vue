@@ -3,7 +3,7 @@
     :open="open"
     :title="drawerTitle"
     :description="drawerSubtitle"
-    size="md"
+    width="md"
     @update:open="$emit('update:open', $event)"
   >
     <div v-if="record" class="space-y-6 py-2">
@@ -80,15 +80,13 @@
             size="sm"
             @click="onEdit"
           >
-            <Pencil class="w-3.5 h-3.5 mr-1.5" />
+            <Pencil class="h-3.5 w-3.5" />
             Edit
           </Button>
-          <router-link :to="detailUrl">
-            <Button variant="primary" size="sm">
-              <span>View Full Details</span>
-              <ExternalLink class="w-3.5 h-3.5 ml-1.5" />
-            </Button>
-          </router-link>
+          <Button as="router-link" :to="detailUrl" variant="primary" size="sm">
+            Open full page
+            <ExternalLink class="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
     </template>
@@ -129,7 +127,9 @@ const router = useRouter()
 
 const drawerTitle = computed(() => {
   if (!props.record) return 'Quick View'
-  return `${props.meta?.icon || '📄'} ${props.meta?.title?.slice(0, -1) || 'Record'} Details`
+  const t = props.meta?.title || 'Record'
+  const singular = t.endsWith('ies') ? `${t.slice(0, -3)}y` : t.endsWith('s') ? t.slice(0, -1) : t
+  return `${singular} details`
 })
 
 const drawerSubtitle = computed(() => {

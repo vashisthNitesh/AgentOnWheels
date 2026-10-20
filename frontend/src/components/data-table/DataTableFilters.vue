@@ -1,112 +1,92 @@
 <template>
   <Drawer
     :open="open"
-    title="Filter Records"
-    description="Refine displayed records using field filters and date ranges."
-    size="md"
+    title="Filters"
+    description="Narrow down the records shown in this list."
+    width="sm"
     @update:open="$emit('update:open', $event)"
   >
-    <div class="space-y-6 py-2">
-      <!-- Section: Status & State -->
-      <div v-if="meta?.status_choices?.length" class="space-y-2.5">
-        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Status
-        </label>
+    <div class="space-y-6">
+      <section v-if="meta?.status_choices?.length" class="space-y-2">
+        <h3 class="section-title">Status</h3>
         <Select
           v-model="draftFilters[meta.status || 'status']"
           placeholder="All statuses"
           :options="statusOptions"
         />
-      </div>
+      </section>
 
-      <!-- Section: Date Ranges -->
-      <div v-if="meta?.dates?.length" class="space-y-4">
-        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Date Ranges
-        </label>
-        <div v-for="d in meta.dates" :key="d.name" class="space-y-1.5">
-          <span class="text-xs font-medium text-slate-700 dark:text-slate-300">{{ d.label }}</span>
+      <section v-if="meta?.dates?.length" class="space-y-3">
+        <h3 class="section-title">Dates</h3>
+        <FormField v-for="d in meta.dates" :key="d.name" :label="d.label">
           <DateRangePicker
-            :model-value="{
-              from: draftDates[`${d.name}_from`],
-              to: draftDates[`${d.name}_to`]
-            }"
-            placeholder="Select date range"
+            :model-value="{ from: draftDates[`${d.name}_from`] || '', to: draftDates[`${d.name}_to`] || '' }"
+            placeholder="Any date"
             @update:model-value="onDateRangeChange(d.name, $event)"
           />
-        </div>
-      </div>
+        </FormField>
+      </section>
 
-      <!-- Section: Relational & Choice Filters -->
-      <div v-if="meta?.filters?.length" class="space-y-4">
-        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Field Filters
-        </label>
-        <div class="grid grid-cols-1 gap-4">
-          <template v-for="f in meta.filters" :key="f.name">
-            <!-- FK Reference Filter -->
-            <div v-if="f.type === 'fk'" class="space-y-1.5">
-              <label class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                {{ f.label }}
-              </label>
-              <Combobox
-                v-model="draftFilters[f.name]"
-                :options="fkOptions[f.resource] || []"
-                :loading="fkLoading[f.resource]"
-                :placeholder="`All ${pluralize(f.label)}`"
-              />
-            </div>
+      <section v-if="meta?.filters?.length" class="space-y-3">
+        <h3 class="section-title">Fields</h3>
+        <template v-for="f in meta.filters" :key="f.name">
+          <FormField v-if="f.type === 'fk'" :label="f.label">
+            <Combobox
+              v-model="draftFilters[f.name]"
+              :options="fkOptions[f.resource] || []"
+              :loading="fkLoading[f.resource]"
+              :placeholder="`Any ${f.label.toLowerCase()}`"
+              :search-placeholder="`Search ${pluralize(f.label)}…`"
+            />
+          </FormField>
 
-            <!-- Choice Filter -->
-            <div v-else-if="f.type === 'choice'" class="space-y-1.5">
-              <label class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                {{ f.label }}
-              </label>
-              <Select
-                v-model="draftFilters[f.name]"
-                :options="getChoiceOptions(f)"
-                :placeholder="`All ${pluralize(f.label)}`"
-              />
-            </div>
+          <FormField v-else-if="f.type === 'choice'" :label="f.label">
+            <Select
+              v-model="draftFilters[f.name]"
+              :options="getChoiceOptions(f)"
+              :placeholder="`Any ${f.label.toLowerCase()}`"
+            />
+          </FormField>
 
-            <!-- Boolean Filter -->
-            <div v-else-if="f.type === 'bool'" class="flex items-center justify-between py-1">
-              <div>
-                <span class="text-xs font-medium text-slate-700 dark:text-slate-300">{{ f.label }}</span>
-                <p class="text-[11px] text-slate-400">Filter by positive status</p>
-              </div>
-              <Select
-                v-model="draftFilters[f.name]"
-                class="w-32"
-                :options="[
-                  { value: undefined, label: 'Any' },
-                  { value: 'true', label: 'Yes' },
-                  { value: 'false', label: 'No' },
+          <FormField v-else-if="f.type === 'bool'" :label="f.label">
+            <div class="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+              <button
+                v-for="opt in boolOptions"
+                :key="String(opt.value)"
+                type="button"
+                :class="[
+                  'h-7 rounded-md text-xs font-medium transition-colors',
+                  String(draftFilters[f.name] ?? '') === String(opt.value ?? '')
+                    ? 'bg-surface text-primary shadow-sm'
+                    : 'text-muted hover:text-primary'
                 ]"
-              />
+                @click="draftFilters[f.name] = opt.value"
+              >
+                {{ opt.label }}
+              </button>
             </div>
-          </template>
-        </div>
-      </div>
+          </FormField>
+        </template>
+      </section>
+
+      <p
+        v-if="!meta?.status_choices?.length && !meta?.dates?.length && !meta?.filters?.length"
+        class="py-10 text-center text-sm text-muted"
+      >
+        This list has no additional filters.
+      </p>
     </div>
 
-    <!-- Drawer Sticky Footer -->
     <template #footer>
-      <div class="flex items-center justify-between w-full">
-        <button
-          type="button"
-          class="text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-          @click="resetDraft"
-        >
-          Reset filters
-        </button>
+      <div class="flex w-full items-center justify-between gap-2">
+        <Button variant="ghost" size="sm" :disabled="draftActiveCount === 0" @click="resetDraft">
+          Reset
+        </Button>
         <div class="flex items-center gap-2">
-          <Button variant="outline" size="sm" @click="$emit('update:open', false)">
-            Cancel
-          </Button>
+          <Button variant="outline" size="sm" @click="$emit('update:open', false)">Cancel</Button>
           <Button variant="primary" size="sm" @click="applyFilters">
-            Apply Filters
-            <span v-if="draftActiveCount > 0" class="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+            Apply
+            <span v-if="draftActiveCount > 0" class="rounded-full bg-white/25 px-1.5 text-[11px] leading-[18px]">
               {{ draftActiveCount }}
             </span>
           </Button>
@@ -116,6 +96,12 @@
   </Drawer>
 </template>
 
+<style scoped>
+.section-title {
+  @apply text-[11px] font-semibold uppercase tracking-wider text-muted;
+}
+</style>
+
 <script setup>
 import { ref, computed, watch, reactive } from 'vue'
 import Drawer from '../ui/Drawer.vue'
@@ -123,6 +109,7 @@ import Button from '../ui/Button.vue'
 import Select from '../ui/Select.vue'
 import Combobox from '../ui/Combobox.vue'
 import DateRangePicker from '../ui/DateRangePicker.vue'
+import FormField from '../ui/FormField.vue'
 import api from '../../api'
 
 const props = defineProps({
@@ -181,6 +168,12 @@ const statusOptions = computed(() => {
   return [{ value: undefined, label: 'All statuses' }, ...choices.map((c) => ({ value: c.value, label: c.label }))]
 })
 
+const boolOptions = [
+  { value: undefined, label: 'Any' },
+  { value: 'true', label: 'Yes' },
+  { value: 'false', label: 'No' },
+]
+
 function getChoiceOptions(f) {
   const choices = f.choices || []
   return [{ value: undefined, label: `All ${pluralize(f.label)}` }, ...choices]
@@ -189,8 +182,8 @@ function getChoiceOptions(f) {
 function pluralize(label) {
   if (!label) return 'records'
   const l = label.toLowerCase()
-  if (l.endsWith('y')) return l.slice(0, -1) + 'ies'
-  if (l.endsWith('s') || l.endsWith('ch')) return l + 'es'
+  if (/[^aeiou]y$/.test(l)) return l.slice(0, -1) + 'ies'
+  if (/(s|x|z|ch|sh)$/.test(l)) return l + 'es'
   return l + 's'
 }
 
@@ -233,9 +226,12 @@ const draftActiveCount = computed(() => {
   for (const [k, v] of Object.entries(draftFilters)) {
     if (v !== undefined && v !== null && v !== '' && v !== 'all') count++
   }
+  // A date range (from + to) counts as a single filter.
+  const ranges = new Set()
   for (const [k, v] of Object.entries(draftDates)) {
-    if (v) count++
+    if (v) ranges.add(k.replace(/_(from|to)$/, ''))
   }
+  count += ranges.size
   return count
 })
 

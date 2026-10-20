@@ -40,17 +40,20 @@ const props = defineProps({
   size: {
     type: [Number, String],
     default: 32,
-    validator: v => [20, 24, 32, 40, '20', '24', '32', '40'].includes(v),
+    // Accepts pixel sizes (20/24/28/32/40) or names (xs/sm/md/lg).
   },
 })
 
 const imgError = ref(false)
 
+const NAMED = { xs: 20, sm: 24, md: 32, lg: 40 }
+
 const sizeClasses = computed(() => {
-  const s = Number(props.size)
+  const s = NAMED[props.size] ?? Number(props.size)
   return {
     20: 'w-5 h-5 text-[9px]',
     24: 'w-6 h-6 text-[10px]',
+    28: 'w-7 h-7 text-[11px]',
     32: 'w-8 h-8 text-xs',
     40: 'w-10 h-10 text-sm',
   }[s] || 'w-8 h-8 text-xs'

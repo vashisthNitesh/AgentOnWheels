@@ -1,135 +1,145 @@
 <template>
   <FormField
     :id="`field-${name}`"
+    :class="$attrs.class"
     :label="field.label || formatLabel(name)"
     :required="field.required"
-    :optional="!field.required && !field.readonly"
-    :hint="field.help"
+    :optional="!field.required && !field.readonly && field.type !== 'bool'"
+    :hint="field.type === 'bool' ? '' : field.help"
     :error="error"
   >
-    <!-- Readonly Field Display -->
+    <!-- Readonly -->
     <div
       v-if="field.readonly"
-      class="h-9 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center"
+      class="flex h-9 items-center rounded-lg border border-dashed border-border-strong bg-subtle px-3 text-sm text-secondary"
     >
-      {{ modelValue ?? '—' }}
+      {{ readonlyDisplay }}
     </div>
 
-    <!-- Boolean Switch -->
-    <div v-else-if="field.type === 'bool'" class="pt-1.5 flex items-center justify-between">
-      <span class="text-xs text-slate-500 dark:text-slate-400">{{ field.help || 'Enable or disable this option' }}</span>
+    <!-- Boolean -->
+    <div
+      v-else-if="field.type === 'bool'"
+      class="flex h-9 items-center justify-between gap-3 rounded-lg border border-border-strong bg-surface px-3 shadow-xs"
+    >
+      <span class="truncate text-sm text-secondary">{{ field.help || (modelValue ? 'Enabled' : 'Disabled') }}</span>
       <Switch
+        :id="`field-${name}`"
         :model-value="!!modelValue"
         @update:model-value="$emit('update:modelValue', $event)"
       />
     </div>
 
-    <!-- Long Textarea -->
+    <!-- Long text -->
     <Textarea
       v-else-if="isLongText"
       :id="`field-${name}`"
       :model-value="modelValue ?? ''"
       :rows="3"
-      :placeholder="`Enter ${field.label?.toLowerCase() || 'details'}…`"
-      :error="!!error"
+      :placeholder="`Enter ${lowerLabel}…`"
       @update:model-value="$emit('update:modelValue', $event)"
       @blur="$emit('blur')"
     />
 
-    <!-- Foreign Key: Async Combobox -->
+    <!-- Foreign key -->
     <Combobox
       v-else-if="field.type === 'fk'"
       :id="`field-${name}`"
       :model-value="modelValue"
       :options="fkOptions"
       :loading="fkLoading"
-      :placeholder="`Select ${field.label?.toLowerCase()}…`"
-      :error="!!error"
+      :placeholder="`Select ${lowerLabel}…`"
+      :search-placeholder="`Search ${lowerLabel}…`"
       @update:model-value="onFkChange"
       @blur="$emit('blur')"
     />
 
-    <!-- M2M: MultiSelect -->
+    <!-- Many-to-many -->
     <MultiSelect
       v-else-if="field.type === 'm2m'"
       :id="`field-${name}`"
       :model-value="Array.isArray(modelValue) ? modelValue : []"
       :options="fkOptions"
       :loading="fkLoading"
-      :placeholder="`Select ${field.label?.toLowerCase()}…`"
-      :error="!!error"
+      :placeholder="`Select ${lowerLabel}…`"
       @update:model-value="$emit('update:modelValue', $event)"
       @blur="$emit('blur')"
     />
 
-    <!-- Choice Select / RadioGroup -->
+    <!-- Choice -->
     <Select
       v-else-if="field.type === 'choice'"
       :id="`field-${name}`"
       :model-value="modelValue"
       :options="field.choices || []"
-      :placeholder="`Select ${field.label?.toLowerCase()}…`"
-      :error="!!error"
-      @update:model-value="$emit('update:modelValue', $event)"
-      @blur="$emit('blur')"
+      :placeholder="`Select ${lowerLabel}…`"
+      :clearable="!field.required"
+      @update:model-value="onChoiceChange"
     />
 
-    <!-- Date / Datetime Picker -->
+    <!-- Date / datetime -->
     <DatePicker
       v-else-if="field.type === 'date' || field.type === 'datetime'"
       :id="`field-${name}`"
       :model-value="modelValue"
-      :include-time="field.type === 'datetime'"
-      :placeholder="`Select ${field.label?.toLowerCase()}…`"
-      :error="!!error"
-      @update:model-value="$emit('update:modelValue', $event)"
+      :with-time="field.type === 'datetime'"
+      :placeholder="field.type === 'datetime' ? 'Select date & time…' : 'Select date…'"
+      @update:model-value="onChoiceChange"
       @blur="$emit('blur')"
     />
 
-    <!-- Money Currency Input -->
+    <!-- Money -->
     <Input
       v-else-if="field.money"
       :id="`field-${name}`"
       :model-value="modelValue"
       type="number"
       step="0.01"
-      :prefix="currencyPrefix"
+      inputmode="decimal"
+      class="text-right tabular-nums"
+      :prefix="currency || 'AED'"
       placeholder="0.00"
-      :error="!!error"
       @update:model-value="$emit('update:modelValue', $event === '' ? null : $event)"
       @blur="$emit('blur')"
     />
 
-    <!-- Numeric Input with Unit Suffix -->
+    <!-- Number with unit -->
     <Input
       v-else-if="unitSuffix"
       :id="`field-${name}`"
       :model-value="modelValue"
       type="number"
-      :step="field.type === 'decimal' || field.type === 'float' ? '0.01' : '1'"
+      :step="isDecimal ? '0.01' : '1'"
+      :inputmode="isDecimal ? 'decimal' : 'numeric'"
+      class="tabular-nums"
       :suffix="unitSuffix"
-      placeholder="0.00"
-      :error="!!error"
+      :placeholder="isDecimal ? '0.00' : '0'"
       @update:model-value="$emit('update:modelValue', $event === '' ? null : $event)"
       @blur="$emit('blur')"
     />
 
-    <!-- Standard Text / Number / Email Input -->
+    <!-- Plain text / number / email / phone -->
     <Input
       v-else
       :id="`field-${name}`"
       :model-value="modelValue"
       :type="inputType"
-      :placeholder="`Enter ${field.label?.toLowerCase() || name}…`"
-      :error="!!error"
+      :inputmode="inputType === 'number' ? (isDecimal ? 'decimal' : 'numeric') : undefined"
+      :step="inputType === 'number' ? (isDecimal ? '0.01' : '1') : undefined"
+      :class="inputType === 'number' ? 'tabular-nums' : ''"
+      :autocomplete="inputType === 'email' ? 'email' : inputType === 'tel' ? 'tel' : 'off'"
+      :placeholder="placeholderText"
       @update:model-value="$emit('update:modelValue', $event === '' ? null : $event)"
       @blur="$emit('blur')"
-    />
+    >
+      <template v-if="inputType === 'email'" #prefix><Mail class="h-4 w-4" /></template>
+      <template v-else-if="inputType === 'tel'" #prefix><Phone class="h-4 w-4" /></template>
+    </Input>
   </FormField>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { Mail, Phone } from 'lucide-vue-next'
 import FormField from '../ui/FormField.vue'
 import Input from '../ui/Input.vue'
 import Textarea from '../ui/Textarea.vue'
@@ -140,56 +150,71 @@ import DatePicker from '../ui/DatePicker.vue'
 import Switch from '../ui/Switch.vue'
 import api from '../../api'
 
+defineOptions({ inheritAttrs: false })
+
 const props = defineProps({
-  name: {
-    type: String,
-    required: true,
-  },
-  field: {
-    type: Object,
-    required: true,
-  },
+  name: { type: String, required: true },
+  field: { type: Object, required: true },
   modelValue: [String, Number, Boolean, Array, Object],
   error: String,
-  currency: {
-    type: String,
-    default: 'AED',
-  },
+  currency: { type: String, default: 'AED' },
   initialLabel: String,
 })
 
 const emit = defineEmits(['update:modelValue', 'blur', 'fk-select'])
 
-const isLongText = computed(() => {
-  return props.field.type === 'text' || props.name === 'notes' || props.name === 'remarks' || props.name.includes('address')
-})
+const lowerLabel = computed(() => (props.field.label || formatLabel(props.name)).toLowerCase())
+const isDecimal = computed(() => ['decimal', 'float'].includes(props.field.type))
+
+const isLongText = computed(() =>
+  props.field.type === 'text' || props.name === 'notes' || props.name === 'remarks' || props.name.includes('address')
+)
 
 const unitSuffix = computed(() => {
-  if (props.name.endsWith('_t') || props.name === 'weight_t' || props.name === 'payload_t') return 't'
-  if (props.name.endsWith('_km') || props.name === 'distance_km' || props.name === 'odometer_km') return 'km'
-  if (props.name.endsWith('_pct') || props.name.includes('rate_pct')) return '%'
-  if (props.name.endsWith('_cm')) return 'cm'
-  if (props.name.endsWith('_mm')) return 'mm'
-  if (props.name === 'days' || props.name.endsWith('_days')) return 'days'
+  const n = props.name
+  if (n.endsWith('_t')) return 't'
+  if (n.endsWith('_km')) return 'km'
+  if (n.endsWith('_pct') || n.includes('rate_pct')) return '%'
+  if (n.endsWith('_cm')) return 'cm'
+  if (n.endsWith('_mm')) return 'mm'
+  if (n.endsWith('_kg')) return 'kg'
+  if (n === 'days' || n.endsWith('_days')) return 'days'
+  if (n.endsWith('_hours') || n.endsWith('_hrs')) return 'hrs'
   return null
-})
-
-const currencyPrefix = computed(() => {
-  return props.currency || 'AED'
 })
 
 const inputType = computed(() => {
   if (['int', 'float', 'decimal'].includes(props.field.type)) return 'number'
   if (props.field.type === 'email' || props.name.includes('email')) return 'email'
-  if (props.name.includes('phone')) return 'tel'
+  if (props.name.includes('phone') || props.name.includes('mobile')) return 'tel'
   return 'text'
+})
+
+const placeholderText = computed(() => {
+  if (inputType.value === 'email') return 'name@company.com'
+  if (inputType.value === 'tel') return '+971 50 000 0000'
+  if (inputType.value === 'number') return isDecimal.value ? '0.00' : '0'
+  return `Enter ${lowerLabel.value}…`
+})
+
+const readonlyDisplay = computed(() => {
+  const v = props.modelValue
+  if (v === null || v === undefined || v === '') return '—'
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No'
+  return String(v)
 })
 
 function formatLabel(name) {
   return name.replace(/_/g, ' ').replace(/^./, (s) => s.toUpperCase())
 }
 
-// FK Options Loading
+// Choice / date values: emit and validate immediately (no native blur event).
+function onChoiceChange(val) {
+  emit('update:modelValue', val)
+  emit('blur')
+}
+
+// FK options (shared cache across all fields on the page)
 const fkOptions = ref([])
 const fkLoading = ref(false)
 const cache = (window.__refCache ||= {})
@@ -197,21 +222,25 @@ const cache = (window.__refCache ||= {})
 async function loadFkOptions() {
   const resource = props.field.resource
   if (!resource) return
-
-  // Preserve initial label on edit
-  if (props.modelValue && props.initialLabel && !fkOptions.value.some((o) => o.value === props.modelValue)) {
-    fkOptions.value.push({ value: props.modelValue, label: props.initialLabel })
+  if (props.modelValue && props.initialLabel) {
+    fkOptions.value = [{ value: props.modelValue, label: props.initialLabel }]
   }
-
   fkLoading.value = true
   try {
     if (!cache[resource]) {
-      cache[resource] = api.get(`${resource}/`, { params: { page_size: 500 } }).then((r) => r.data.results)
+      cache[resource] = api
+        .get(`${resource}/`, { params: { page_size: 500 } })
+        .then((r) => r.data.results)
+        .catch((e) => {
+          delete cache[resource]
+          throw e
+        })
     }
     const results = await cache[resource]
     fkOptions.value = (results || []).map((item) => ({
       value: item.id,
-      label: item.display || item.company_name || item.name || item.plate_number || `#${item.id}`,
+      label: item.display || item.company_name || item.name || item.plate_number || item.number || `#${item.id}`,
+      code: item.code || item.plate_number || undefined,
       raw: item,
     }))
   } catch (e) {
@@ -223,20 +252,14 @@ async function loadFkOptions() {
 
 function onFkChange(val) {
   emit('update:modelValue', val)
-  const selectedOpt = fkOptions.value.find((o) => o.value === val)
-  emit('fk-select', { name: props.name, value: val, option: selectedOpt })
+  const option = fkOptions.value.find((o) => o.value === val)
+  emit('fk-select', { name: props.name, value: val, option })
+  emit('blur')
 }
 
-watch(
-  () => props.field.resource,
-  (res) => {
-    if (res) loadFkOptions()
-  }
-)
+watch(() => props.field.resource, (res) => res && loadFkOptions())
 
 onMounted(() => {
-  if (props.field.type === 'fk' || props.field.type === 'm2m') {
-    loadFkOptions()
-  }
+  if (props.field.type === 'fk' || props.field.type === 'm2m') loadFkOptions()
 })
 </script>

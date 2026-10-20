@@ -152,6 +152,7 @@ const pageTitle = computed(() => {
   if (p === '/control-tower') return 'Control tower'
   if (p === '/configuration') return 'Configuration hub'
   if (p === '/ui-kit') return 'UI Kit & Test Bench'
+  if (p.startsWith('/orders/')) return 'Orders'
   if (route.params.key) {
     return route.params.key.replace(/-/g, ' ').replace(/^./, s => s.toUpperCase())
   }
