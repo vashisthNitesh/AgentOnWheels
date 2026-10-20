@@ -3,6 +3,7 @@ import datetime as dt
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjValidationError
 from django.db import models as djm
 from django.db.models import Count
@@ -139,29 +140,84 @@ class BaseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         c = R[self.key]
-        qs = c["model"].objects.all()
-        rel = [f.name for f in c["model"]._meta.fields if f.is_relation]
-        return qs.select_related(*rel).order_by(*(self.request.query_params.get("ordering") and [] or [c["ordering"]]))
+        model = c["model"]
+        qs = model.objects.all()
+        rel = []
+        for f in model._meta.fields:
+            if f.is_relation and f.related_model:
+                rel.append(f.name)
+                if f.related_model == m.Lane:
+                    rel.extend([f"{f.name}__source", f"{f.name}__destination"])
+                elif f.related_model in (m.Location, m.Branch, m.Customer, m.Vendor):
+                    rel.append(f"{f.name}__country")
+                elif f.related_model == m.Trip:
+                    rel.extend([f"{f.name}__vehicle", f"{f.name}__driver", f"{f.name}__vendor", f"{f.name}__order__lane__source", f"{f.name}__order__lane__destination"])
+
+        qs = qs.select_related(*rel)
+
+        # Reverse relation / m2m prefetches needed by extra fields
+        if self.key == "orders":
+            qs = qs.prefetch_related("trips")
+        elif self.key == "bids":
+            qs = qs.prefetch_related("responses", "vendors_invited")
+        elif self.key == "technicians":
+            qs = qs.prefetch_related("jobcard_set")
+        elif self.key == "rfqs":
+            qs = qs.prefetch_related("vendors")
+
+        ordering = self.request.query_params.get("ordering") if hasattr(self.request, "query_params") else None
+        return qs.order_by(*(ordering and [] or [c["ordering"]]))
+
+    def _bump_ver(self):
+        try:
+            v = cache.get(f"ver:{self.key}", 1)
+            cache.set(f"ver:{self.key}", v + 1, 86400)
+        except Exception:
+            pass
+
+    def list(self, request, *args, **kwargs):
+        v = cache.get(f"ver:{self.key}", 1)
+        ck = f"list:{self.key}:{v}:{sorted(request.query_params.items())}"
+        cached = cache.get(ck)
+        if cached is not None:
+            return Response(cached)
+        resp = super().list(request, *args, **kwargs)
+        cache.set(ck, resp.data, 60)
+        return resp
 
     def perform_create(self, ser):
         kw = {"created_by": self.request.user.get_username()} if hasattr(R[self.key]["model"], "created_by") else {}
         ser.save(**kw)
+        self._bump_ver()
+
+    def perform_update(self, ser):
+        ser.save()
+        self._bump_ver()
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        self._bump_ver()
 
     @action(detail=False)
     def counts(self, request):
         c = R[self.key]
-        qs = self.filter_queryset(self.get_queryset())
         sf = c["status"]
         if not sf:
-            return Response({"all": qs.count()})
+            return Response({"all": c["model"].objects.count()})
+        v = cache.get(f"ver:{self.key}", 1)
+        ck = f"cnt:{self.key}:{v}:{sorted(request.query_params.items())}"
+        cached = cache.get(ck)
+        if cached is not None:
+            return Response(cached)
         params = request.query_params.copy()
         for k in list(params):
             if k.startswith(sf):
                 params.pop(k)
         request._request.GET = params
-        qs = self.filter_queryset(self.get_queryset())
+        qs = self.filter_queryset(c["model"].objects.all())
         data = {r[sf]: r["n"] for r in qs.order_by().values(sf).annotate(n=Count("id"))}
         data["all"] = sum(data.values())
+        cache.set(ck, data, 60)
         return Response(data)
 
     @action(detail=False)
@@ -318,7 +374,12 @@ def meta_index(request):
 def meta_resource(request, key):
     if key not in R:
         return Response({"detail": "Unknown resource"}, status=404)
-    return Response(meta_for(key))
+    ck = f"meta_res:{key}"
+    cached = cache.get(ck)
+    if cached is None:
+        cached = meta_for(key)
+        cache.set(ck, cached, 3600)
+    return Response(cached)
 
 
 @api_view(["GET"])

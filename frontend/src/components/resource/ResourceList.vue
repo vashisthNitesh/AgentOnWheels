@@ -85,7 +85,7 @@
           @clear-filters="onClearFilters"
           @filters-changed="onFiltersChanged"
           @export="onExportCsv"
-          @refresh="loadData"
+          @refresh="onRefresh"
           @reset-columns="resetColumns"
           @apply-view="onApplyView"
           @save-view="onSaveView"
@@ -252,7 +252,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Plus, ChevronRight } from 'lucide-vue-next'
 import { getModuleIcon } from '../../layouts/moduleIcons'
-import api, { errText } from '../../api'
+import api, { errText, getMeta } from '../../api'
 import { formatRelative } from '../../utils/format'
 import { useToast } from '../../composables/useToast'
 import { useConfirm } from '../../composables/useConfirm'
@@ -325,6 +325,7 @@ const {
   toggleRowSelection,
   toggleSelectPage,
   clearSelection,
+  invalidateCache,
 } = tableComposable
 
 // Modal / Drawer states
@@ -620,13 +621,24 @@ function onSaveView(name) {
   toast.success(`Saved view "${name}"`)
 }
 
+function onRefresh() {
+  invalidateCache(resourceKey.value)
+  loadData(true)
+}
+
 // Initialize on mount
 async function initMeta() {
-  loading.value = true
+  const currentKey = resourceKey.value
+  if (!currentKey) return
   error.value = ''
+
+  // Fire data load concurrently (optimistic stale-while-revalidate renders instantly if cached)
+  loadData()
+
   try {
-    const res = await api.get(`meta/${resourceKey.value}/`)
-    meta.value = res.data
+    const data = await getMeta(currentKey)
+    if (resourceKey.value !== currentKey) return
+    meta.value = data
 
     // Hydrate filters from route.query
     for (const [k, v] of Object.entries(route.query)) {
@@ -634,11 +646,11 @@ async function initMeta() {
         filterComposable.filters.value[k] = isNaN(v) ? v : Number(v)
       }
     }
-
-    loadData()
   } catch (e) {
-    error.value = errText(e)
-    loading.value = false
+    if (!meta.value) {
+      error.value = errText(e)
+      loading.value = false
+    }
   }
 }
 

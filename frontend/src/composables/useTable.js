@@ -185,11 +185,14 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
     return p
   }
 
+  // Global in-memory table cache for instant tab navigation (stale-while-revalidate)
+  const tableCache = new Map()
+
   // Request cancellation & sequencing
   let abortController = null
   let requestSeq = 0
 
-  async function loadData() {
+  async function loadData(forceFresh = false) {
     const currentSeq = ++requestSeq
 
     // Cancel any ongoing fetch
@@ -198,8 +201,19 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
     }
     abortController = new AbortController()
 
-    // Determine loading indicators
-    if (rows.value.length === 0) {
+    const currentKey = key.value
+    const p = buildParams(true)
+    const ck = `${currentKey}:${JSON.stringify(p)}`
+
+    // Fast cache check: if cached, render immediately without showing a blank loading skeleton
+    const cached = !forceFresh ? tableCache.get(ck) : null
+    if (cached) {
+      rows.value = cached.rows
+      total.value = cached.total
+      if (cached.counts) counts.value = cached.counts
+      loading.value = false
+      isFetching.value = true
+    } else if (rows.value.length === 0) {
       loading.value = true
     } else {
       isFetching.value = true
@@ -207,11 +221,10 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
     error.value = ''
 
     try {
-      const currentKey = key.value
       const meta = metaRef.value
 
       const listPromise = api.get(`${currentKey}/`, {
-        params: buildParams(true),
+        params: p,
         signal: abortController.signal,
       })
 
@@ -231,6 +244,14 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
       total.value = listRes.data.count || 0
       counts.value = countsRes?.data || null
       lastUpdated.value = new Date()
+
+      // Save to cache
+      tableCache.set(ck, {
+        rows: rows.value,
+        total: total.value,
+        counts: counts.value,
+        time: Date.now(),
+      })
     } catch (e) {
       if (e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED') return
       if (currentSeq === requestSeq) {
@@ -240,6 +261,19 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
       if (currentSeq === requestSeq) {
         loading.value = false
         isFetching.value = false
+      }
+    }
+  }
+
+  // Invalidate cache for a specific resource or all
+  function invalidateCache(targetKey) {
+    if (!targetKey) {
+      tableCache.clear()
+      return
+    }
+    for (const k of tableCache.keys()) {
+      if (k.startsWith(`${targetKey}:`)) {
+        tableCache.delete(k)
       }
     }
   }
@@ -302,5 +336,6 @@ export function useTable(resourceKeyRef, metaRef, filterComposable) {
     toggleRowSelection,
     toggleSelectPage,
     clearSelection,
+    invalidateCache,
   }
 }

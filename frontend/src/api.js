@@ -44,4 +44,24 @@ export function errText(e) {
   if (typeof d === 'string') return 'Server error'
   return d.detail || Object.entries(d).map(([k, v]) => `${k === 'non_field_errors' ? '' : k + ': '}${[].concat(v).join(' ')}`).join(' · ')
 }
+
+const metaCache = new Map()
+export async function getMeta(key) {
+  if (metaCache.has(key)) return metaCache.get(key)
+  try {
+    const cached = sessionStorage.getItem(`aow_meta_${key}`)
+    if (cached) {
+      const parsed = JSON.parse(cached)
+      metaCache.set(key, parsed)
+      return parsed
+    }
+  } catch {}
+  const { data } = await api.get(`meta/${key}/`)
+  metaCache.set(key, data)
+  try {
+    sessionStorage.setItem(`aow_meta_${key}`, JSON.stringify(data))
+  } catch {}
+  return data
+}
+
 export default api

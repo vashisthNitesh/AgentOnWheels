@@ -814,6 +814,8 @@ class Order(Numbered):
     # ---- single source of truth for derived values
     @property
     def vehicles_committed(self):
+        if hasattr(self, "_prefetched_objects_cache") and "trips" in self._prefetched_objects_cache:
+            return sum(1 for t in self._prefetched_objects_cache["trips"] if t.status != "cancelled" and (t.vehicle_id or t.vendor_id))
         return self.trips.exclude(status="cancelled").filter(models.Q(vehicle__isnull=False) | models.Q(vendor__isnull=False)).count()
 
     @property
@@ -823,6 +825,8 @@ class Order(Numbered):
 
     @property
     def cost(self):
+        if hasattr(self, "_prefetched_objects_cache") and "trips" in self._prefetched_objects_cache:
+            return money(sum(t.buy_rate for t in self._prefetched_objects_cache["trips"] if t.status != "cancelled"))
         return money(self.trips.exclude(status="cancelled").aggregate(s=models.Sum("buy_rate"))["s"])
 
     @property

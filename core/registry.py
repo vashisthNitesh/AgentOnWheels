@@ -170,6 +170,19 @@ for key, model, title, cols, *f in [
         extra=["open_jobs"] if key == "technicians" else [])
 
 # computed properties used by extras
-m.Bid.responses_label = property(lambda s: f"{s.responses.count()}/{s.vendors_invited.count()}")
+def _bid_responses_label(s):
+    if hasattr(s, "_prefetched_objects_cache"):
+        r = len(s._prefetched_objects_cache.get("responses", [])) if "responses" in s._prefetched_objects_cache else s.responses.count()
+        v = len(s._prefetched_objects_cache.get("vendors_invited", [])) if "vendors_invited" in s._prefetched_objects_cache else s.vendors_invited.count()
+        return f"{r}/{v}"
+    return f"{s.responses.count()}/{s.vendors_invited.count()}"
+
+def _technician_open_jobs(s):
+    if hasattr(s, "_prefetched_objects_cache") and "jobcard_set" in s._prefetched_objects_cache:
+        c = sum(1 for j in s._prefetched_objects_cache["jobcard_set"] if j.status in m.JobCard.OPEN_STATES)
+        return f"{c}/{s.capacity}"
+    return f"{s.jobcard_set.filter(status__in=m.JobCard.OPEN_STATES).count()}/{s.capacity}"
+
+m.Bid.responses_label = property(_bid_responses_label)
 m.Driver.passcode_status = property(lambda s: "Set" if s.passcode_hash else "Not set")
-m.Technician.open_jobs = property(lambda s: f"{s.jobcard_set.filter(status__in=m.JobCard.OPEN_STATES).count()}/{s.capacity}")
+m.Technician.open_jobs = property(_technician_open_jobs)
