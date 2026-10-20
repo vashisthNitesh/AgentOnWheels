@@ -34,8 +34,8 @@ export const STATUS_MAP = {
 
   // Neutral Tone (draft, pending, available, open, closed)
   available: { key: 'available', label: 'Available', tone: 'neutral', icon: 'CheckSquare' },
-  pending: { key: 'pending', label: 'Pending', tone: 'neutral', icon: 'Clock' },
-  pending_approval: { key: 'pending_approval', label: 'Pending approval', tone: 'neutral', icon: 'Clock4' },
+  pending: { key: 'pending', label: 'Pending', tone: 'warning', icon: 'Clock' },
+  pending_approval: { key: 'pending_approval', label: 'Pending approval', tone: 'warning', icon: 'Clock4' },
   draft: { key: 'draft', label: 'Draft', tone: 'neutral', icon: 'FileEdit' },
   created: { key: 'created', label: 'Created', tone: 'neutral', icon: 'PlusCircle' },
   requested: { key: 'requested', label: 'Requested', tone: 'neutral', icon: 'HelpCircle' },

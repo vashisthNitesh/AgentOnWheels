@@ -29,8 +29,8 @@
           : 'border-border-strong hover:border-slate-400 dark:hover:border-slate-500 focus:border-primary-500',
         disabled && 'opacity-60 cursor-not-allowed bg-muted pointer-events-none',
         readonly && 'bg-subtle cursor-default',
-        (prefix || $slots.prefix) && 'pl-9',
-        (suffix || $slots.suffix || isPassword || clearable) && 'pr-10',
+        paddingLeftClass,
+        paddingRightClass,
         $attrs.class
       )"
       @input="handleInput"
@@ -40,37 +40,43 @@
       @blur="$emit('blur', $event)"
     />
 
-    <!-- Password visibility toggle -->
-    <button
-      v-if="isPassword"
-      type="button"
-      tabindex="-1"
-      class="absolute right-3 text-secondary hover:text-primary transition p-0.5 rounded focus-ring"
-      :aria-label="showPassword ? 'Hide password' : 'Show password'"
-      @click="showPassword = !showPassword"
-    >
-      <EyeOff v-if="showPassword" class="w-4 h-4" />
-      <Eye v-else class="w-4 h-4" />
-    </button>
-
-    <!-- Clearable button -->
-    <button
-      v-else-if="clearable && modelValue && !disabled && !readonly"
-      type="button"
-      tabindex="-1"
-      class="absolute right-3 text-secondary hover:text-primary transition p-0.5 rounded focus-ring"
-      aria-label="Clear input"
-      @click="clear"
-    >
-      <X class="w-3.5 h-3.5" />
-    </button>
-
-    <!-- Suffix / Unit slot -->
+    <!-- Right side controls: Clear button, Suffix, Password eye -->
     <div
-      v-else-if="$slots.suffix || suffix"
-      class="absolute right-3 flex items-center pointer-events-none text-muted text-xs select-none font-medium"
+      v-if="isPassword || (clearable && modelValue !== '' && modelValue !== null && !disabled && !readonly) || $slots.suffix || suffix"
+      class="absolute right-3 flex items-center gap-1.5"
     >
-      <slot name="suffix">{{ suffix }}</slot>
+      <!-- Clearable button -->
+      <button
+        v-if="clearable && modelValue !== '' && modelValue !== null && !disabled && !readonly"
+        type="button"
+        tabindex="-1"
+        class="text-secondary hover:text-primary transition p-0.5 rounded focus-ring cursor-pointer"
+        aria-label="Clear input"
+        @click="clear"
+      >
+        <X class="w-3.5 h-3.5" />
+      </button>
+
+      <!-- Suffix / Unit slot -->
+      <div
+        v-if="$slots.suffix || suffix"
+        class="flex items-center pointer-events-none text-muted text-xs select-none font-medium"
+      >
+        <slot name="suffix">{{ suffix }}</slot>
+      </div>
+
+      <!-- Password visibility toggle -->
+      <button
+        v-if="isPassword"
+        type="button"
+        tabindex="-1"
+        class="text-secondary hover:text-primary transition p-0.5 rounded focus-ring cursor-pointer"
+        :aria-label="showPassword ? 'Hide password' : 'Show password'"
+        @click="showPassword = !showPassword"
+      >
+        <EyeOff v-if="showPassword" class="w-4 h-4" />
+        <Eye v-else class="w-4 h-4" />
+      </button>
     </div>
 
     <!-- Caps lock alert for passwords -->
@@ -84,9 +90,11 @@
 </template>
 
 <script setup>
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, useSlots } from 'vue'
 import { Eye, EyeOff, X } from 'lucide-vue-next'
 import { cn } from '../../utils/cn'
+
+const slots = useSlots()
 
 const props = defineProps({
   modelValue: {
@@ -172,6 +180,21 @@ const sizeClasses = computed(() => {
     md: 'h-9 text-sm px-3',
     lg: 'h-10 text-base px-3.5',
   }[props.size]
+})
+
+const paddingLeftClass = computed(() => {
+  if (!props.prefix && !slots.prefix) return ''
+  if (props.prefix && props.prefix.length > 2) return 'pl-14'
+  return 'pl-9'
+})
+
+const paddingRightClass = computed(() => {
+  const hasSuffix = Boolean(props.suffix || slots.suffix)
+  const hasAction = Boolean(isPassword.value || (props.clearable && props.modelValue !== '' && props.modelValue !== null))
+  if (hasSuffix && hasAction) return 'pr-20'
+  if (hasSuffix) return (props.suffix?.length > 3 ? 'pr-16' : 'pr-12')
+  if (hasAction || props.clearable) return 'pr-10'
+  return ''
 })
 
 function handleInput(e) {

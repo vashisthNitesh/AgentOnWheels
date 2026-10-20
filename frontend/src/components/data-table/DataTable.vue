@@ -44,12 +44,10 @@
               class="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-950/95 w-10 px-3 py-3 border-r border-slate-200 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.4)]"
             >
               <div class="flex items-center justify-center">
-                <input
-                  type="checkbox"
-                  :checked="isPageSelected"
-                  :indeterminate="isPagePartiallySelected"
-                  class="rounded border-slate-300 text-brand-600 focus:ring-brand-500 h-3.5 w-3.5 cursor-pointer"
-                  @change="$emit('select-all', $event.target.checked)"
+                <Checkbox
+                  :model-value="isPagePartiallySelected ? 'indeterminate' : isPageSelected"
+                  aria-label="Select all rows"
+                  @update:model-value="$emit('select-all', Boolean($event))"
                 />
               </div>
             </th>
@@ -116,15 +114,19 @@
               v-for="(row, idx) in rows"
               :key="row.id || idx"
               :class="[
-                'group transition-colors cursor-pointer',
+                'group transition-colors cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-inset',
                 selectedRowIds.includes(row.id)
-                  ? 'bg-brand-50/60 dark:bg-brand-950/30'
+                  ? 'bg-primary-50/80 dark:bg-primary-950/70 text-slate-900 dark:text-slate-100 font-medium'
                   : idx === focusedIndex
                     ? 'bg-slate-100 dark:bg-slate-800/80 ring-1 ring-inset ring-brand-500/30'
                     : 'hover:bg-slate-50 dark:hover:bg-slate-800/50',
                 isFetching ? 'opacity-70' : 'opacity-100'
               ]"
+              tabindex="0"
+              role="row"
               @click="onRowClick(row, $event)"
+              @keydown.enter="onRowClick(row, $event)"
+              @keydown.space.prevent="onRowClick(row, $event)"
             >
               <!-- Selection Checkbox (Sticky Left) -->
               <td
@@ -133,11 +135,10 @@
                 @click.stop
               >
                 <div class="flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    :checked="selectedRowIds.includes(row.id)"
-                    class="rounded border-slate-300 text-brand-600 focus:ring-brand-500 h-3.5 w-3.5 cursor-pointer"
-                    @change="$emit('toggle-select', row.id)"
+                  <Checkbox
+                    :model-value="selectedRowIds.includes(row.id)"
+                    :aria-label="`Select row ${row.number || row.id}`"
+                    @update:model-value="$emit('toggle-select', row.id)"
                   />
                 </div>
               </td>
@@ -205,6 +206,7 @@ import CellDispatcher from './cells/CellDispatcher.vue'
 import ActionsCell from './cells/ActionsCell.vue'
 import EmptyState from '../feedback/EmptyState.vue'
 import Button from '../ui/Button.vue'
+import Checkbox from '../ui/Checkbox.vue'
 
 const props = defineProps({
   rows: {

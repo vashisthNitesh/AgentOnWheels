@@ -76,8 +76,8 @@
   --border-strong: 203 213 225;      /* slate-300 */
 
   --text-primary: 15 23 42;          /* slate-900 */
-  --text-secondary: 71 85 105;       /* slate-600 */
-  --text-muted: 100 116 139;         /* slate-500 */
+  --text-secondary: 51 65 85;        /* slate-700 (crisp 7.3:1 contrast on white) */
+  --text-muted: 71 85 105;           /* slate-600 (strong 5.2:1 contrast on white) */
   --text-on-primary: 255 255 255;    /* white */
 
   --focus-ring: 99 102 241;          /* primary-500 @ 40% */
@@ -105,8 +105,8 @@
   --border-strong: 51 65 85;         /* slate-700 */
 
   --text-primary: 248 250 252;       /* slate-50 */
-  --text-secondary: 148 163 184;     /* slate-400 */
-  --text-muted: 100 116 139;         /* slate-500 */
+  --text-secondary: 203 213 225;     /* slate-300 (8.6:1 contrast on slate-900) */
+  --text-muted: 148 163 184;         /* slate-400 (5.4:1 contrast on slate-900) */
   --text-on-primary: 255 255 255;    /* white */
 
   --focus-ring: 129 140 248;         /* primary-400 @ 50% */

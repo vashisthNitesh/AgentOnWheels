@@ -13,7 +13,7 @@
     <span class="relative flex h-2 w-2 shrink-0">
       <span
         v-if="meta.pulse"
-        :class="cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', toneStyles.dot)"
+        :class="cn('animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full opacity-75', toneStyles.dot)"
       />
       <span :class="cn('relative inline-flex rounded-full h-2 w-2', toneStyles.dot)" />
     </span>
@@ -68,7 +68,7 @@ const props = defineProps({
   },
   showIcon: {
     type: Boolean,
-    default: false,
+    default: true,
   },
 })
 

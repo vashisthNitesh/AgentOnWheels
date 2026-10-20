@@ -5,12 +5,16 @@
     :href="as === 'a' ? href : undefined"
     :type="as === 'button' ? type : undefined"
     :disabled="as === 'button' ? (disabled || loading) : undefined"
-    :aria-disabled="as !== 'button' && (disabled || loading) ? 'true' : undefined"
+    :aria-disabled="(disabled || loading) ? 'true' : undefined"
     :aria-busy="loading ? 'true' : undefined"
+    :tabindex="(disabled || loading) ? -1 : undefined"
     :class="cn(
-      buttonVariants({ variant, size, block, loading, disabled: disabled || loading }),
+      buttonVariants({ variant, size, block, loading }),
+      loading && 'pointer-events-none cursor-wait opacity-70',
+      disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
       $attrs.class
     )"
+    @click.capture="handleClick"
   >
     <!-- Loading spinner replaces leading icon without layout jump -->
     <Spinner v-if="loading" :size="size === 'lg' ? 'md' : 'sm'" class="shrink-0" />
@@ -126,4 +130,11 @@ const componentType = computed(() => {
   if (props.as === 'a') return 'a'
   return 'button'
 })
+
+function handleClick(e) {
+  if (props.disabled || props.loading) {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+}
 </script>

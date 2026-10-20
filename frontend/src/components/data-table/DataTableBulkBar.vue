@@ -9,7 +9,7 @@
   >
     <div
       v-if="selectedCount > 0"
-      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-auto px-4 py-2.5 rounded-xl border border-slate-700/80 bg-slate-900/95 dark:bg-slate-900/95 text-white shadow-2xl backdrop-blur-md flex items-center gap-3 sm:gap-4 select-none"
+      class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1.5rem)] w-auto px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-slate-700/80 bg-slate-900/95 dark:bg-slate-900/95 text-white shadow-2xl backdrop-blur-md flex items-center gap-2 sm:gap-4 select-none overflow-x-auto"
     >
       <!-- Selected count & select all matching button -->
       <div class="flex items-center gap-2 pr-2 border-r border-slate-700 text-xs sm:text-sm">

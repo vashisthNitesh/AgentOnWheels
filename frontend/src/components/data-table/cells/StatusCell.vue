@@ -1,6 +1,6 @@
 <template>
   <div class="inline-flex items-center">
-    <StatusPill v-if="status" :status="status" :label="label" size="sm" />
+    <StatusPill v-if="status" :status="status" :label="label" size="sm" show-icon />
     <span v-else class="text-slate-400 dark:text-slate-600">—</span>
   </div>
 </template>

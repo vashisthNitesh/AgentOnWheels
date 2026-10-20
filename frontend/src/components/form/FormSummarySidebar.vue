@@ -73,6 +73,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { formatCurrency } from '../../utils/format'
 
 const props = defineProps({
   steps: {
@@ -133,7 +134,7 @@ function formatValue(val, field) {
   if (val === undefined || val === null || val === '') return '—'
   if (typeof val === 'boolean') return val ? 'Yes' : 'No'
   if (Array.isArray(val)) return `${val.length} selected`
-  if (field?.money) return `${val} AED`
+  if (field?.money) return formatCurrency(val, props.formData?.currency || 'AED')
   return String(val)
 }
 </script>

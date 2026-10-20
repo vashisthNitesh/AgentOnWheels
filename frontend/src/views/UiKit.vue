@@ -1,31 +1,35 @@
 <template>
-  <div class="min-h-screen bg-app text-primary p-6 lg:p-12 transition-colors duration-200">
+  <div class="min-h-screen bg-app text-primary p-4 sm:p-6 lg:p-12 transition-colors duration-200 w-full max-w-full overflow-x-hidden">
     <ToastContainer />
     <ConfirmDialog />
 
-    <div class="max-w-7xl mx-auto space-y-14">
+    <div class="max-w-7xl mx-auto space-y-10 sm:space-y-14 w-full min-w-0">
       <!-- Header -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-default pb-6">
-        <div>
-          <div class="flex items-center gap-2">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs uppercase tracking-wider font-semibold text-primary-600 dark:text-primary-400">Design System</span>
             <span class="chip bg-accent-50 text-accent-700 dark:bg-accent-950/50 dark:text-accent-300">Phase 2 Component Library</span>
           </div>
-          <h1 class="text-3xl font-bold tracking-tight mt-1">AgentOnWheels UI Primitives & Test Bench</h1>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight mt-1 break-words">AgentOnWheels UI Primitives & Test Bench</h1>
           <p class="text-secondary text-sm mt-1">Enterprise-grade accessible components, form controls, feedback overlays, and tokens.</p>
         </div>
 
         <!-- Theme Mode Switcher -->
-        <div class="flex items-center gap-1 bg-surface border border-border-default rounded-lg p-1 shadow-xs">
+        <div role="radiogroup" aria-label="Theme mode" class="flex items-center gap-1 bg-surface border border-border-default rounded-lg p-1 shadow-xs shrink-0 self-start md:self-auto">
           <button
             v-for="mode in ['light', 'dark', 'system']"
             :key="mode"
+            type="button"
+            role="radio"
+            :aria-checked="theme === mode"
             :class="[
-              'px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 focus-ring',
+              'px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 focus-ring cursor-pointer',
               theme === mode
                 ? 'bg-primary-600 text-white shadow-xs dark:bg-primary-500'
                 : 'text-secondary hover:text-primary hover:bg-subtle'
             ]"
+            :aria-label="`Set theme to ${mode}`"
             @click="setTheme(mode)"
           >
             <component :is="modeIcon(mode)" class="w-3.5 h-3.5" />
@@ -61,7 +65,7 @@
               <Button variant="primary" loading>Saving Changes…</Button>
               <Button variant="danger" loading>Deleting…</Button>
               <Button variant="secondary" disabled>Disabled State</Button>
-              <Button variant="secondary" size="icon" title="Settings"><Settings class="w-4 h-4" /></Button>
+              <Button variant="secondary" size="icon" title="Settings" aria-label="Settings"><Settings class="w-4 h-4" /></Button>
             </div>
           </div>
 
@@ -81,8 +85,9 @@
         <h2 class="text-lg font-semibold flex items-center gap-2">
           <span>📝 Form Controls & Accessible FormField</span>
         </h2>
-        <Card class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card class="p-4 sm:p-6 w-full min-w-0 overflow-hidden">
+          <form @submit.prevent="toast.info('Form submitted successfully')" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Text Input with Units -->
             <FormField label="Cargo Weight" hint="Maximum payload capacity" required>
               <Input v-model="form.weight" type="number" suffix="tonnes" placeholder="0.00" clearable />
@@ -95,7 +100,7 @@
 
             <!-- Password with Caps Lock -->
             <FormField label="Driver Passcode" hint="Show/hide & Caps Lock detection" error="Passcode must be at least 6 digits">
-              <Input v-model="form.password" type="password" placeholder="Enter secure passcode" />
+              <Input v-model="form.password" type="password" placeholder="Enter secure passcode" autocomplete="new-password" />
             </FormField>
 
             <!-- Select Static Options -->
@@ -149,7 +154,7 @@
 
             <!-- Textarea -->
             <FormField label="Special Handling Instructions" optional>
-              <Textarea v-model="form.notes" placeholder="Driver remarks, gate requirements…" maxlength="300" />
+              <Textarea v-model="form.notes" placeholder="Driver remarks, gate requirements…" :maxlength="300" />
             </FormField>
           </div>
 
@@ -175,7 +180,8 @@
               />
             </div>
           </div>
-        </Card>
+        </form>
+      </Card>
       </section>
 
       <!-- 3. Status Vocabulary & Badges -->
@@ -203,7 +209,9 @@
               <StatusPill status="in_transit" show-icon />
               <StatusPill status="in_progress" show-icon />
               <StatusPill status="confirmed" show-icon />
+              <StatusPill status="delivered" show-icon />
               <StatusPill status="completed" show-icon />
+              <StatusPill status="pending" show-icon />
               <StatusPill status="unassigned" show-icon />
               <StatusPill status="cancelled" show-icon />
               <StatusPill status="ready_for_invoice" show-icon />
@@ -263,12 +271,12 @@
         <Card class="p-6 flex flex-wrap items-center justify-between gap-6">
           <!-- Avatars & Groups -->
           <div class="flex items-center gap-4">
-            <Avatar name="Rashid Khan" size="40" />
-            <Avatar name="Nitesh Vashisth" size="32" />
-            <AvatarGroup :overflow-count="4" size="32">
-              <Avatar name="John Doe" size="32" />
-              <Avatar name="Ali Al-Mansoor" size="32" />
-              <Avatar name="Carlos Silva" size="32" />
+            <Avatar name="Rashid Khan" :size="40" />
+            <Avatar name="Nitesh Vashisth" :size="32" />
+            <AvatarGroup :overflow-count="4" :size="32">
+              <Avatar name="John Doe" :size="32" />
+              <Avatar name="Ali Al-Mansoor" :size="32" />
+              <Avatar name="Carlos Silva" :size="32" />
             </AvatarGroup>
           </div>
 
@@ -380,7 +388,7 @@
                 <Skeleton size="sm" width="w-1/2" />
               </div>
               <div class="card p-4 flex items-center gap-3">
-                <Skeleton variant="avatar" size="40" />
+                <Skeleton variant="avatar" :size="40" />
                 <div class="flex-1 space-y-2">
                   <Skeleton size="sm" width="w-24" />
                   <Skeleton size="sm" width="w-36" />
@@ -425,12 +433,15 @@
           </h2>
           <div class="flex items-center gap-2">
             <span class="text-xs text-secondary">Density:</span>
-            <div class="inline-flex rounded-lg border border-border-default bg-surface p-0.5 text-xs">
+            <div role="radiogroup" aria-label="Table density" class="inline-flex rounded-lg border border-border-default bg-surface p-0.5 text-xs">
               <button
                 v-for="d in ['compact', 'normal', 'relaxed']"
                 :key="d"
+                type="button"
+                role="radio"
+                :aria-checked="tableDensity === d"
                 :class="[
-                  'px-2.5 py-1 rounded-md capitalize transition-colors',
+                  'px-2.5 py-1 rounded-md capitalize transition-colors focus-ring cursor-pointer',
                   tableDensity === d ? 'bg-primary-600 text-white font-medium' : 'text-secondary hover:text-primary'
                 ]"
                 @click="tableDensity = d"
@@ -441,22 +452,27 @@
           </div>
         </div>
 
-        <DataTable
-          :rows="mockOrders"
-          :columns="mockOrderColumns"
-          :fields="mockOrderFields"
-          resource-key="orders"
-          resource-title="Orders"
-          :density="tableDensity"
-          :ordering="tableOrdering"
-          :selected-row-ids="tableSelectedIds"
-          :is-page-selected="tableSelectedIds.length === mockOrders.length"
-          :is-page-partially-selected="tableSelectedIds.length > 0 && tableSelectedIds.length < mockOrders.length"
-          @sort="tableOrdering = tableOrdering === $event ? '-' + $event : $event"
-          @toggle-select="toggleTableSelect"
-          @select-all="toggleTableSelectAll"
-          @row-click="openQuickView"
-        />
+        <div class="w-full min-w-0 max-w-full overflow-hidden">
+          <div class="flex items-center justify-between text-[11px] text-muted pb-1.5 sm:hidden">
+            <span>⇄ Swipe horizontally to see all columns</span>
+          </div>
+          <DataTable
+            :rows="mockOrders"
+            :columns="mockOrderColumns"
+            :fields="mockOrderFields"
+            resource-key="orders"
+            resource-title="Orders"
+            :density="tableDensity"
+            :ordering="tableOrdering"
+            :selected-row-ids="tableSelectedIds"
+            :is-page-selected="tableSelectedIds.length === mockOrders.length"
+            :is-page-partially-selected="tableSelectedIds.length > 0 && tableSelectedIds.length < mockOrders.length"
+            @sort="tableOrdering = tableOrdering === $event ? '-' + $event : $event"
+            @toggle-select="toggleTableSelect"
+            @select-all="toggleTableSelectAll"
+            @row-click="openQuickView"
+          />
+        </div>
 
         <DataTableBulkBar
           :selected-count="tableSelectedIds.length"
@@ -467,30 +483,45 @@
       </section>
 
       <!-- Drawer Preview -->
-      <Drawer v-model:open="showDrawer" title="Quick View: ORD-2026-9041" description="Live trip status, cargo summary, and timeline" width="md">
+      <Drawer
+        v-model:open="showDrawer"
+        :title="`Quick View: ${activeOrder.number}`"
+        description="Live trip status, cargo summary, and timeline"
+        width="md"
+      >
         <div class="space-y-6 text-sm">
           <div class="flex items-center justify-between pb-3 border-b border-border-default">
             <div>
-              <div class="font-mono text-xs text-secondary">DXB → AUH</div>
-              <div class="text-base font-bold mt-0.5">Emirates Steel LLC</div>
+              <div class="font-mono text-xs text-secondary">{{ activeOrder.lane }}</div>
+              <div class="text-base font-bold mt-0.5">{{ activeOrder.customer_label }}</div>
             </div>
-            <StatusPill status="in_transit" show-icon />
+            <StatusPill :status="activeOrder.status" :label="activeOrder.status_label" show-icon />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div class="card p-3">
               <span class="text-xs text-muted">Planned Pickup</span>
-              <div class="font-medium text-xs mt-1">20 Oct 2026, 08:30</div>
+              <div class="font-medium text-xs mt-1">{{ formatDateTime(activeOrder.loading_at) }}</div>
+            </div>
+            <div class="card p-3">
+              <span class="text-xs text-muted">Sell Rate</span>
+              <div class="font-medium text-xs mt-1 font-mono text-primary-600 dark:text-primary-400">
+                {{ formatCurrency(activeOrder.sell_rate, activeOrder.currency) }}
+              </div>
+            </div>
+            <div class="card p-3">
+              <span class="text-xs text-muted">Cargo Payload</span>
+              <div class="font-medium text-xs mt-1">{{ formatWeight(activeOrder.weight_t) }}</div>
             </div>
             <div class="card p-3">
               <span class="text-xs text-muted">ETA Destination</span>
-              <div class="font-medium text-xs mt-1 text-emerald-600 dark:text-emerald-400">On Track · 11:45</div>
+              <div class="font-medium text-xs mt-1 text-emerald-600 dark:text-emerald-400">On Track · Active</div>
             </div>
           </div>
         </div>
         <template #footer>
           <Button variant="ghost" @click="showDrawer = false">Close</Button>
-          <Button variant="primary" @click="showDrawer = false; toast.info('Navigating to full order page')">Open Full Page ↗</Button>
+          <Button variant="primary" @click="showDrawer = false; toast.info(`Navigating to ${activeOrder.number}`)">Open Full Page ↗</Button>
         </template>
       </Drawer>
     </div>
@@ -507,7 +538,7 @@ import { useTheme } from '../composables/useTheme'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 
-// Components
+import { formatDateTime, formatCurrency, formatWeight } from '../utils/format'
 import Button from '../components/ui/Button.vue'
 import Input from '../components/ui/Input.vue'
 import Textarea from '../components/ui/Textarea.vue'
@@ -636,26 +667,6 @@ function testToasts() {
 }
 
 // DataTable Showcase State & Data
-const tableDensity = ref('normal')
-const tableOrdering = ref('loading_at')
-const tableSelectedIds = ref([1, 2])
-
-function toggleTableSelect(id) {
-  if (tableSelectedIds.value.includes(id)) {
-    tableSelectedIds.value = tableSelectedIds.value.filter((i) => i !== id)
-  } else {
-    tableSelectedIds.value = [...tableSelectedIds.value, id]
-  }
-}
-
-function toggleTableSelectAll(checked) {
-  tableSelectedIds.value = checked ? mockOrders.map((o) => o.id) : []
-}
-
-function openQuickView(row) {
-  showDrawer.value = true
-}
-
 const mockOrderColumns = [
   { name: 'number', label: 'Order #' },
   { name: 'customer', label: 'Customer' },
@@ -730,4 +741,26 @@ const mockOrders = [
     weight_t: 22.5,
   },
 ]
+
+const tableDensity = ref('normal')
+const tableOrdering = ref('loading_at')
+const tableSelectedIds = ref([])
+const activeOrder = ref(mockOrders[0])
+
+function toggleTableSelect(id) {
+  if (tableSelectedIds.value.includes(id)) {
+    tableSelectedIds.value = tableSelectedIds.value.filter((i) => i !== id)
+  } else {
+    tableSelectedIds.value = [...tableSelectedIds.value, id]
+  }
+}
+
+function toggleTableSelectAll(checked) {
+  tableSelectedIds.value = checked ? mockOrders.map((o) => o.id) : []
+}
+
+function openQuickView(row) {
+  activeOrder.value = row || mockOrders[0]
+  showDrawer.value = true
+}
 </script>

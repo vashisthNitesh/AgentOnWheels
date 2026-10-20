@@ -13,14 +13,14 @@ export function formatCurrency(value, currency = 'AED', locale = 'en-US') {
   if (isNaN(n)) return '—'
 
   try {
-    return new Intl.NumberFormat(locale, {
-      style: currency && currency !== 'MIXED' ? 'currency' : 'decimal',
-      currency: currency && currency !== 'MIXED' ? currency : undefined,
+    const formattedNum = n.toLocaleString(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(n)
+    })
+    return currency && currency !== 'MIXED' ? `${currency} ${formattedNum}` : formattedNum
   } catch {
-    return (currency ? currency + ' ' : '') + n.toFixed(2)
+    const fallbackNum = n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    return (currency ? currency + ' ' : '') + fallbackNum
   }
 }
 
