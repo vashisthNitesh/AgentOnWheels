@@ -22,13 +22,10 @@
     <div class="h-14 flex items-center justify-between px-4 border-b border-border-default shrink-0">
       <router-link
         to="/dashboard"
-        class="flex items-center gap-2.5 font-bold text-primary truncate hover:opacity-90 transition"
+        class="flex items-center gap-2.5 font-bold text-primary truncate hover:opacity-90 transition min-w-0"
         @click="$emit('close-mobile')"
       >
-        <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white shrink-0 shadow-xs">
-          <Truck class="w-4 h-4" />
-        </div>
-        <span v-if="!collapsed" class="text-sm tracking-tight font-bold font-sans">AgentOnWheels</span>
+        <BrandLogo :with-text="!collapsed" with-badge size="md" />
       </router-link>
 
       <button
@@ -153,6 +150,7 @@ import {
 } from 'lucide-vue-next'
 import { cn } from '../utils/cn'
 import Tooltip from '../components/ui/Tooltip.vue'
+import BrandLogo from '../components/brand/BrandLogo.vue'
 import { getModuleIcon } from './moduleIcons'
 
 const props = defineProps({

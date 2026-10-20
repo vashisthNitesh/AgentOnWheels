@@ -52,7 +52,7 @@ const props = defineProps({
 
 watchEffect(() => {
   if (props.title) {
-    document.title = `${props.title} · AgentOnWheels`
+    document.title = `${props.title} · Axle`
   }
 })
 </script>

@@ -11,7 +11,7 @@
             <span class="text-xs uppercase tracking-wider font-semibold text-primary-600 dark:text-primary-400">Design System</span>
             <span class="chip bg-accent-50 text-accent-700 dark:bg-accent-950/50 dark:text-accent-300">Phase 2 Component Library</span>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight mt-1 break-words">AgentOnWheels UI Primitives & Test Bench</h1>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight mt-1 break-words">Axle UI Primitives & Test Bench</h1>
           <p class="text-secondary text-sm mt-1">Enterprise-grade accessible components, form controls, feedback overlays, and tokens.</p>
         </div>
 

@@ -62,7 +62,7 @@
           <span>Navigate <Kbd>↑</Kbd> <Kbd>↓</Kbd></span>
           <span>Select <Kbd>↵</Kbd></span>
         </div>
-        <span>AgentOnWheels Quick Search</span>
+        <span>Axle Quick Search</span>
       </div>
     </div>
   </Modal>

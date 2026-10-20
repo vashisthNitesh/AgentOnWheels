@@ -156,6 +156,6 @@ const pageTitle = computed(() => {
   if (route.params.key) {
     return route.params.key.replace(/-/g, ' ').replace(/^./, s => s.toUpperCase())
   }
-  return 'AgentOnWheels TMS'
+  return 'Axle TMS'
 })
 </script>

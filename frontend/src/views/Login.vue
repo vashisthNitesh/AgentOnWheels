@@ -12,86 +12,240 @@
       </div>
 
       <!-- Brand -->
-      <div class="relative flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500 shadow-lg shadow-primary-500/30 ring-1 ring-white/20">
-          <Truck class="h-5 w-5" />
-        </div>
-        <div>
-          <p class="text-[15px] font-semibold tracking-tight">AgentOnWheels</p>
-          <p class="text-xs text-slate-400">Transport management system</p>
-        </div>
+      <div class="relative">
+        <BrandLogo size="lg" with-badge invert />
       </div>
 
-      <!-- Route illustration -->
-      <div class="relative mx-auto my-6 w-full max-w-[520px] px-4 pt-12 pb-12">
-        <svg viewBox="0 0 520 360" class="h-auto w-full overflow-visible" fill="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="lg-route" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#818cf8" />
-              <stop offset="100%" stop-color="#2dd4bf" />
-            </linearGradient>
-          </defs>
+      <!-- Interactive Brand Showcase -->
+      <div class="relative my-auto w-full max-w-lg space-y-6 py-6">
+        <!-- Headline -->
+        <div class="space-y-2">
+          <h1 class="text-2xl font-bold tracking-tight text-white xl:text-3xl xl:leading-tight">
+            Connected freight & fleet intelligence.
+          </h1>
+          <p class="text-sm leading-relaxed text-slate-300">
+            Dispatch loads in seconds, monitor live vehicle telemetry, and reconcile automated freight billing.
+          </p>
+        </div>
 
-          <!-- Secondary lanes -->
-          <path d="M90 70 C 200 95, 300 110, 420 120" stroke="#334155" stroke-width="1.5" stroke-dasharray="3 6" />
-          <path d="M80 200 C 170 210, 220 250, 260 290" stroke="#334155" stroke-width="1.5" stroke-dasharray="3 6" />
+        <!-- Interactive Mode Switcher Tabs -->
+        <div class="flex items-center gap-1.5 rounded-xl border border-white/10 bg-slate-900/80 p-1 backdrop-blur-md">
+          <button
+            type="button"
+            :class="[
+              'flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-150',
+              demoTab === 'dispatch'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            ]"
+            @click="demoTab = 'dispatch'"
+          >
+            Dispatch flow
+          </button>
+          <button
+            type="button"
+            :class="[
+              'flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-150',
+              demoTab === 'telematics'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            ]"
+            @click="demoTab = 'telematics'"
+          >
+            Fleet telematics
+          </button>
+          <button
+            type="button"
+            :class="[
+              'flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-150',
+              demoTab === 'billing'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            ]"
+            @click="demoTab = 'billing'"
+          >
+            Fast billing
+          </button>
+        </div>
 
-          <!-- Primary corridor -->
-          <path id="lg-corridor-a" d="M90 70 C 70 140, 70 170, 80 200 C 95 245, 140 300, 330 320" stroke="#312e81" stroke-width="7" stroke-linecap="round" />
-          <path d="M90 70 C 70 140, 70 170, 80 200 C 95 245, 140 300, 330 320" stroke="url(#lg-route)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 12" class="lg-flow" />
+        <!-- Tab 1: Dispatch Flow Card -->
+        <div
+          v-if="demoTab === 'dispatch'"
+          class="rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur-xl shadow-2xl space-y-4"
+        >
+          <div class="flex items-center justify-between border-b border-white/10 pb-3">
+            <div>
+              <span class="font-mono text-xs font-medium text-primary-400">ORDER #AXL-8840</span>
+              <p class="text-xs text-slate-300 font-medium mt-0.5">Commercial Freight · 28 Ton</p>
+            </div>
+            <span
+              :class="[
+                'rounded-full px-2.5 py-1 text-[11px] font-semibold border',
+                dispatchStage === 0 && 'bg-blue-500/10 text-blue-300 border-blue-500/20',
+                dispatchStage === 1 && 'bg-amber-500/10 text-amber-300 border-amber-500/20',
+                dispatchStage === 2 && 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
+                dispatchStage === 3 && 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+              ]"
+            >
+              {{ dispatchStageLabels[dispatchStage] }}
+            </span>
+          </div>
 
-          <!-- East corridor -->
-          <path id="lg-corridor-b" d="M420 120 C 360 180, 300 240, 260 290 C 280 305, 305 315, 330 320" stroke="#134e4a" stroke-width="5" stroke-linecap="round" />
-          <path d="M420 120 C 360 180, 300 240, 260 290 C 280 305, 305 315, 330 320" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 9" class="lg-flow-rev" />
+          <!-- Route corridor -->
+          <div class="space-y-1 text-xs">
+            <div class="flex items-center justify-between text-slate-300 font-medium">
+              <span>Port Logistics Terminal</span>
+              <span class="text-slate-500">➔</span>
+              <span>Inland Distribution Hub</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Assigned Asset: Volvo FH16 · Driver: Marcus Vance</p>
+          </div>
 
-          <!-- Moving vehicles -->
-          <g class="lg-vehicle">
-            <animateMotion dur="11s" repeatCount="indefinite" rotate="auto"><mpath href="#lg-corridor-a" /></animateMotion>
-            <circle r="11" fill="#6366f1" fill-opacity="0.25" />
-            <circle r="6.5" fill="#818cf8" stroke="#fff" stroke-width="1.5" />
-          </g>
-          <g class="lg-vehicle">
-            <animateMotion dur="14s" repeatCount="indefinite" rotate="auto"><mpath href="#lg-corridor-b" /></animateMotion>
-            <circle r="10" fill="#14b8a6" fill-opacity="0.25" />
-            <circle r="6" fill="#2dd4bf" stroke="#fff" stroke-width="1.5" />
-          </g>
+          <!-- Stepper Visualization -->
+          <div class="grid grid-cols-4 gap-2 pt-1">
+            <div
+              v-for="(st, idx) in ['Created', 'Assigned', 'In transit', 'Delivered']"
+              :key="st"
+              class="space-y-1.5"
+            >
+              <div
+                :class="[
+                  'h-1.5 rounded-full transition-all duration-300',
+                  idx <= dispatchStage ? 'bg-primary-500 shadow-sm shadow-primary-500/50' : 'bg-slate-800'
+                ]"
+              />
+              <p
+                :class="[
+                  'text-[10px] font-medium text-center truncate',
+                  idx <= dispatchStage ? 'text-slate-200' : 'text-slate-500'
+                ]"
+              >
+                {{ st }}
+              </p>
+            </div>
+          </div>
 
-          <!-- Hubs -->
-          <g v-for="hub in hubs" :key="hub.label">
-            <circle :cx="hub.x" :cy="hub.y" r="14" :stroke="hub.color" stroke-width="1.5" class="lg-pulse" :style="{ animationDelay: hub.delay }" />
-            <circle :cx="hub.x" :cy="hub.y" r="5" :fill="hub.color" stroke="#fff" stroke-width="1.5" />
-            <text :x="hub.x + hub.dx" :y="hub.y + hub.dy" :text-anchor="hub.anchor" fill="#e2e8f0" font-size="12" font-weight="600">
-              {{ hub.label }}
-            </text>
-          </g>
-        </svg>
+          <!-- Interactive Advance Button -->
+          <button
+            type="button"
+            class="w-full flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/15 active:bg-white/20 py-2.5 px-4 text-xs font-semibold text-white transition border border-white/10"
+            @click="dispatchStage = (dispatchStage + 1) % 4"
+          >
+            <span>{{ dispatchStage === 3 ? '↺ Reset dispatch demo' : `Simulate next step (${dispatchStageLabels[(dispatchStage + 1) % 4]}) →` }}</span>
+          </button>
+        </div>
 
-        <!-- Floating status cards (illustrative) -->
-        <div class="absolute right-0 top-0 flex items-center gap-2.5 rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2 shadow-2xl backdrop-blur-md">
-          <span class="relative flex h-2 w-2">
-            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-            <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+        <!-- Tab 2: Fleet Telematics Card -->
+        <div
+          v-else-if="demoTab === 'telematics'"
+          class="rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur-xl shadow-2xl space-y-4"
+        >
+          <div class="flex items-center justify-between border-b border-white/10 pb-3">
+            <div>
+              <p class="text-xs font-semibold text-white">Truck #104 · Heavy Hauler</p>
+              <p class="text-[11px] text-slate-400">Mercedes Actros 2645 · Highway Corridor</p>
+            </div>
+            <span class="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Engine Online
+            </span>
+          </div>
+
+          <!-- Telemetry Grid -->
+          <div class="grid grid-cols-3 gap-2.5">
+            <div class="rounded-xl border border-white/5 bg-slate-950/50 p-2.5 text-center">
+              <p class="text-[10px] uppercase font-semibold text-slate-400">Speed</p>
+              <p class="text-lg font-bold text-white mt-0.5">{{ truckSpeed }} <span class="text-xs font-normal text-slate-400">km/h</span></p>
+            </div>
+            <div class="rounded-xl border border-white/5 bg-slate-950/50 p-2.5 text-center">
+              <p class="text-[10px] uppercase font-semibold text-slate-400">Fuel level</p>
+              <p class="text-lg font-bold text-teal-300 mt-0.5">84%</p>
+            </div>
+            <div class="rounded-xl border border-white/5 bg-slate-950/50 p-2.5 text-center">
+              <p class="text-[10px] uppercase font-semibold text-slate-400">Reefer temp</p>
+              <p class="text-lg font-bold text-sky-300 mt-0.5">+3.8°C</p>
+            </div>
+          </div>
+
+          <!-- Speed Simulation Controls -->
+          <div class="flex items-center justify-between gap-2 pt-1 text-xs">
+            <span class="text-[11px] text-slate-400">Simulate cruise:</span>
+            <div class="flex items-center gap-1.5">
+              <button
+                v-for="s in [65, 82, 95]"
+                :key="s"
+                type="button"
+                :class="[
+                  'rounded-lg px-2.5 py-1 text-xs font-medium transition border',
+                  truckSpeed === s
+                    ? 'bg-primary-600 text-white border-primary-500'
+                    : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
+                ]"
+                @click="truckSpeed = s"
+              >
+                {{ s }} km/h
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Fast Billing Card -->
+        <div
+          v-else
+          class="rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur-xl shadow-2xl space-y-4"
+        >
+          <div class="flex items-center justify-between border-b border-white/10 pb-3">
+            <div>
+              <p class="text-xs font-semibold text-white">Rate Master & Invoicing</p>
+              <p class="text-[11px] text-slate-400">Dynamic tariff calculation</p>
+            </div>
+            <span class="font-mono text-xs font-bold text-primary-300">$2,450.00</span>
+          </div>
+
+          <!-- Pricing breakdown -->
+          <div class="space-y-1.5 text-xs text-slate-300">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Base freight (420 km)</span>
+              <span>$1,950.00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Fuel surcharge indexed</span>
+              <span>+$280.00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Loading & detention fee</span>
+              <span>+$220.00</span>
+            </div>
+          </div>
+
+          <!-- Action -->
+          <button
+            type="button"
+            :class="[
+              'w-full flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs font-semibold transition border shadow-sm',
+              invoiceCreated
+                ? 'bg-emerald-600/90 text-white border-emerald-500'
+                : 'bg-primary-600 hover:bg-primary-500 text-white border-primary-500'
+            ]"
+            @click="invoiceCreated = !invoiceCreated"
+          >
+            <span>{{ invoiceCreated ? '✓ Tax invoice #INV-4029 generated' : 'Generate automated invoice →' }}</span>
+          </button>
+        </div>
+
+        <!-- Universal feature points -->
+        <div class="flex flex-wrap items-center gap-y-2 gap-x-4 text-[11px] text-slate-400 pt-1">
+          <span class="flex items-center gap-1.5">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            Live GPS telemetry
           </span>
-          <span class="text-xs font-medium text-slate-200">Live trip tracking</span>
+          <span>•</span>
+          <span>Multi-currency rates</span>
+          <span>•</span>
+          <span>Instant driver POD</span>
+          <span>•</span>
+          <span>Audit-ready trails</span>
         </div>
-        <div class="absolute bottom-0 left-0 flex items-center gap-2.5 rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2 shadow-2xl backdrop-blur-md">
-          <Route class="h-4 w-4 text-teal-300" />
-          <span class="text-xs font-medium text-slate-200">Orders → trips → invoices</span>
-        </div>
-      </div>
-
-      <!-- Value props -->
-      <div class="relative space-y-6">
-        <h2 class="max-w-md text-2xl font-semibold leading-tight tracking-tight xl:text-[28px]">
-          Run every load from one control tower.
-        </h2>
-        <ul class="grid gap-4 sm:grid-cols-3">
-          <li v-for="f in features" :key="f.title" class="space-y-1.5">
-            <component :is="f.icon" class="h-5 w-5 text-primary-300" />
-            <p class="text-sm font-medium text-white">{{ f.title }}</p>
-            <p class="text-xs leading-relaxed text-slate-400">{{ f.text }}</p>
-          </li>
-        </ul>
       </div>
     </aside>
 
@@ -100,10 +254,7 @@
       <div class="flex items-center justify-between">
         <!-- Compact brand on mobile -->
         <div class="flex items-center gap-2.5 lg:invisible">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white shadow-sm">
-            <Truck class="h-4 w-4" />
-          </div>
-          <span class="text-sm font-semibold tracking-tight">AgentOnWheels</span>
+          <BrandLogo size="sm" with-badge />
         </div>
 
         <button
@@ -225,7 +376,7 @@
       </div>
 
       <p class="text-center text-[11px] text-muted">
-        © {{ year }} AgentOnWheels · Need access? Contact your administrator.
+        © {{ year }} Axle · Need access? Contact your administrator.
       </p>
     </main>
 
@@ -256,8 +407,7 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
-  Truck, UserRound, LockKeyhole, ArrowRight, CheckCircle2, AlertCircle, Sun, Moon, Sparkles,
-  Route, Radar, Workflow, ReceiptText,
+  UserRound, LockKeyhole, ArrowRight, CheckCircle2, AlertCircle, Sun, Moon, Sparkles,
 } from 'lucide-vue-next'
 
 import { login } from '../api'
@@ -267,6 +417,7 @@ import Input from '../components/ui/Input.vue'
 import FormField from '../components/ui/FormField.vue'
 import Checkbox from '../components/ui/Checkbox.vue'
 import Modal from '../components/ui/Modal.vue'
+import BrandLogo from '../components/brand/BrandLogo.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -288,19 +439,11 @@ const showForgot = ref(false)
 const usernameInputRef = ref(null)
 const passwordInputRef = ref(null)
 
-const hubs = [
-  { label: 'Delhi', x: 90, y: 70, color: '#818cf8', dx: 0, dy: -20, anchor: 'middle', delay: '0s' },
-  { label: 'Ahmedabad', x: 80, y: 200, color: '#a5b4fc', dx: 16, dy: 4, anchor: 'start', delay: '0.6s' },
-  { label: 'Kolkata', x: 420, y: 120, color: '#2dd4bf', dx: 0, dy: -20, anchor: 'middle', delay: '1.2s' },
-  { label: 'Hyderabad', x: 260, y: 290, color: '#5eead4', dx: -14, dy: -12, anchor: 'end', delay: '1.8s' },
-  { label: 'Bengaluru', x: 330, y: 320, color: '#34d399', dx: 0, dy: 28, anchor: 'middle', delay: '2.4s' },
-]
-
-const features = [
-  { icon: Radar, title: 'Live visibility', text: 'Every trip, driver and vehicle on one board.' },
-  { icon: Workflow, title: 'Faster dispatch', text: 'Turn orders into trips in a few clicks.' },
-  { icon: ReceiptText, title: 'Clean billing', text: 'Rates, allowances and invoices in one place.' },
-]
+const demoTab = ref('dispatch')
+const dispatchStage = ref(2)
+const dispatchStageLabels = ['Order Created', 'Driver Assigned', 'In Transit · 84 km/h', 'Delivered & Signed']
+const truckSpeed = ref(82)
+const invoiceCreated = ref(false)
 
 function validateUsername() {
   uErr.value = u.value ? '' : 'Enter your username.'
@@ -389,23 +532,6 @@ onMounted(() => {
     radial-gradient(40% 40% at 70% 20%, rgb(139 92 246 / 0.18), transparent 70%);
 }
 
-.lg-flow { animation: lg-dash 1.8s linear infinite; }
-.lg-flow-rev { animation: lg-dash 2.4s linear infinite reverse; }
-@keyframes lg-dash {
-  from { stroke-dashoffset: 40; }
-  to { stroke-dashoffset: 0; }
-}
-
-.lg-pulse {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: lg-pulse 3s ease-out infinite;
-}
-@keyframes lg-pulse {
-  0% { transform: scale(0.35); opacity: 0.9; }
-  100% { transform: scale(1.3); opacity: 0; }
-}
-
 .animate-shake { animation: shake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
@@ -414,7 +540,6 @@ onMounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lg-flow, .lg-flow-rev, .lg-pulse, .animate-shake { animation: none !important; }
-  .lg-vehicle { display: none; }
+  .animate-shake { animation: none !important; }
 }
 </style>
