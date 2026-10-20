@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: agentonwheels
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health/
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "*"
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: "https://*.onrender.com"
+      - key: DEFAULT_DISPLAY_TZ
+        value: "Asia/Dubai"
+      - key: DATABASE_URL
+        sync: false

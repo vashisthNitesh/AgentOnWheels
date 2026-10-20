@@ -1,0 +1,17 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentonwheels-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_DEBUG=0
+      - DJANGO_SECRET_KEY=production-change-me-secret-key-32chars
+      - DJANGO_ALLOWED_HOSTS=*
+      - DEFAULT_DISPLAY_TZ=Asia/Dubai
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
