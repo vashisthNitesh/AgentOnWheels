@@ -2,7 +2,7 @@ import axios from 'axios'
 import { reactive } from 'vue'
 
 export const auth = reactive({ user: null, ready: false })
-const api = axios.create({ baseURL: '/api/', timeout: 30000 })
+const api = axios.create({ baseURL: '/api/', timeout: 60000 })
 
 api.interceptors.request.use(cfg => {
   const t = localStorage.getItem('aow_access')

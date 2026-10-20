@@ -3,15 +3,23 @@ import datetime as dt
 from collections import defaultdict
 from decimal import Decimal
 
+from django.core.cache import cache
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 from . import models as m
 
 
-def expire_statuses(now=None):
+LAST_EXPIRY_RUN = None
+
+
+def expire_statuses(now=None, force=False):
     """Time-based transitions ATS never did. Idempotent; run via `manage.py expire_statuses` (cron) and lazily."""
+    global LAST_EXPIRY_RUN
     now = now or timezone.now()
+    if not force and LAST_EXPIRY_RUN and (now - LAST_EXPIRY_RUN).total_seconds() < 900:
+        return {}
+    LAST_EXPIRY_RUN = now
     today = timezone.localdate(now)
     res = {}
     # Bids: window passed -> expired (no responses) / closed (responses awaiting award); window open -> active
@@ -124,6 +132,11 @@ def fleet_snapshot(branch=None):
 
 
 def dashboard(params):
+    ck = f"dash:{sorted(params.items())}"
+    cached = cache.get(ck)
+    if cached is not None:
+        return cached
+
     expire_statuses()
     start, end, pstart, pend = _period(params)
     cur, prev = _core(params, start, end), _core(params, pstart, pend)
@@ -175,10 +188,12 @@ def dashboard(params):
         contract_coverage_pct=round(100 * orders.filter(contract__isnull=False).count() / orders.count(), 1) if orders.exists() else None,
         outsourced_pct=round(100 * market / (own + market), 1) if own + market else None,
         confirmed_without_truck=m.Order.objects.filter(status="confirmed").exclude(trips__vehicle__isnull=False).exclude(trips__vendor__isnull=False).count())
-    return dict(period=dict(start=start, end=end, prev_start=pstart, prev_end=pend), currency=_currency(params),
-                kpis=kpis, series=days, funnel=funnel, top_customers=by_customer, by_job_type=by_job,
-                fleet_mix=dict(own=own, market=market), lanes=lanes, branches=branches, finance=finance,
-                commercial=commercial, fleet=fleet_snapshot(params.get("branch")), attention=attention())
+    res = dict(period=dict(start=start, end=end, prev_start=pstart, prev_end=pend), currency=_currency(params),
+               kpis=kpis, series=days, funnel=funnel, top_customers=by_customer, by_job_type=by_job,
+               fleet_mix=dict(own=own, market=market), lanes=lanes, branches=branches, finance=finance,
+               commercial=commercial, fleet=fleet_snapshot(params.get("branch")), attention=attention())
+    cache.set(ck, res, 180)
+    return res
 
 
 def _currency(params):
@@ -213,6 +228,11 @@ def trip_card(t):
 
 
 def control_tower(params):
+    ck = f"ct:{sorted(params.items())}"
+    cached = cache.get(ck)
+    if cached is not None:
+        return cached
+
     now = timezone.now()
     qs = m.Trip.objects.select_related("order__lane__source", "order__lane__destination", "order__customer", "vehicle", "vendor", "driver")
     if params.get("branch"):
@@ -224,8 +244,10 @@ def control_tower(params):
     arr = [trip_card(t) for t in qs.filter(status="in_progress", eta__range=(now, now + dt.timedelta(hours=24)))]
     need = [c for c in nxt if c["status"] == "unassigned"]
     fleet = fleet_snapshot(params.get("branch"))
-    return dict(updated_at=now, tiles=dict(on_road=len(on_road), at_risk=sum(c["risk"] in ("late", "at_risk", "no_eta") for c in on_road),
-                need_truck=len(need), gps_silent=sum(c["gps"] == "silent" for c in on_road), idle=fleet["idle"],
-                completed_today=qs.filter(status="completed", actual_end__date=timezone.localdate()).count()),
-                on_road=on_road, departures=nxt, arrivals=arr, fleet=fleet,
-                idle_vehicles=fleet["idle_vehicles"])
+    res = dict(updated_at=now, tiles=dict(on_road=len(on_road), at_risk=sum(c["risk"] in ("late", "at_risk", "no_eta") for c in on_road),
+               need_truck=len(need), gps_silent=sum(c["gps"] == "silent" for c in on_road), idle=fleet["idle"],
+               completed_today=qs.filter(status="completed", actual_end__date=timezone.localdate()).count()),
+               on_road=on_road, departures=nxt, arrivals=arr, fleet=fleet,
+               idle_vehicles=fleet["idle_vehicles"])
+    cache.set(ck, res, 60)
+    return res

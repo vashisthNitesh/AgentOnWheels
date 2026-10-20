@@ -1,48 +1,49 @@
 <template>
-  <div>
-    <!-- Mobile Off-Canvas Drawer Backdrop -->
+  <!-- Mobile Off-Canvas Drawer Backdrop -->
+  <Teleport to="body">
     <div
       v-if="mobileOpen"
       class="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-xs lg:hidden transition-opacity"
       @click="$emit('close-mobile')"
     />
+  </Teleport>
 
-    <!-- Sidebar Container -->
-    <aside
-      :class="cn(
-        'fixed inset-y-0 left-0 z-50 flex flex-col bg-surface border-r border-border-default transition-all duration-200 select-none',
-        'lg:static lg:z-30 shrink-0',
-        collapsed ? 'w-16' : 'w-[248px]',
-        mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
-        $attrs.class
-      )"
-    >
-      <!-- Brand Header -->
-      <div class="h-14 flex items-center justify-between px-4 border-b border-border-default shrink-0">
-        <router-link
-          to="/dashboard"
-          class="flex items-center gap-2.5 font-bold text-primary truncate hover:opacity-90 transition"
-          @click="$emit('close-mobile')"
-        >
-          <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white shrink-0 shadow-xs">
-            <Truck class="w-4 h-4" />
-          </div>
-          <span v-if="!collapsed" class="text-sm tracking-tight font-bold font-sans">AgentOnWheels</span>
-        </router-link>
+  <!-- Sidebar Container -->
+  <aside
+    :class="cn(
+      'fixed inset-y-0 left-0 z-50 flex flex-col bg-surface border-r border-border-default transition-all duration-200 select-none h-full max-h-dvh lg:h-full lg:max-h-full shrink-0 min-h-0 overflow-hidden',
+      'lg:static lg:z-30',
+      collapsed ? 'w-16' : 'w-[248px]',
+      mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+      $attrs.class
+    )"
+  >
+    <!-- Brand Header -->
+    <div class="h-14 flex items-center justify-between px-4 border-b border-border-default shrink-0">
+      <router-link
+        to="/dashboard"
+        class="flex items-center gap-2.5 font-bold text-primary truncate hover:opacity-90 transition"
+        @click="$emit('close-mobile')"
+      >
+        <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white shrink-0 shadow-xs">
+          <Truck class="w-4 h-4" />
+        </div>
+        <span v-if="!collapsed" class="text-sm tracking-tight font-bold font-sans">AgentOnWheels</span>
+      </router-link>
 
-        <button
-          v-if="mobileOpen"
-          type="button"
-          class="lg:hidden p-1 rounded-md text-secondary hover:text-primary hover:bg-subtle"
-          aria-label="Close sidebar"
-          @click="$emit('close-mobile')"
-        >
-          <X class="w-4 h-4" />
-        </button>
-      </div>
+      <button
+        v-if="mobileOpen"
+        type="button"
+        class="lg:hidden p-1 rounded-md text-secondary hover:text-primary hover:bg-subtle"
+        aria-label="Close sidebar"
+        @click="$emit('close-mobile')"
+      >
+        <X class="w-4 h-4" />
+      </button>
+    </div>
 
-      <!-- Navigation Items (Scrollable) -->
-      <nav class="flex-1 overflow-y-auto px-2 py-3 space-y-6 focus:outline-none">
+    <!-- Navigation Items (Scrollable) -->
+    <nav class="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3 space-y-6 focus:outline-none">
         <!-- Core Navigation Section -->
         <div class="space-y-1">
           <div v-if="!collapsed" class="px-2.5 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
@@ -141,7 +142,6 @@
         </button>
       </div>
     </aside>
-  </div>
 </template>
 
 <script setup>
