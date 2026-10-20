@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: agentonwheels
+    name: axle-tms
     runtime: docker
     dockerfilePath: Dockerfile
     plan: free
@@ -17,5 +17,11 @@ services:
         value: "https://*.onrender.com"
       - key: DEFAULT_DISPLAY_TZ
         value: "Asia/Dubai"
+      - key: CREATE_ADMIN
+        value: "1"
+      - key: DJANGO_ADMIN_PASSWORD
+        value: "admin"
+      - key: SEED_DEMO
+        value: "1"
       - key: DATABASE_URL
         sync: false
